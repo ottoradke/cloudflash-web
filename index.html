@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloudflash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #2179c8;
+      --bg-dark: #1560aa;
+      --border:  rgba(255,255,255,0.18);
+      --text:    #ffffff;
+      --muted:   rgba(255,255,255,0.62);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.1s;
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon { width: 32px; height: 32px; flex-shrink: 0; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-blink { animation: blink 1.8s step-end infinite; }
+
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #a8f0c6;
+      box-shadow: 0 0 6px #a8f0c6;
+      animation: pulse 2.5s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 96px 0 0;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      font-weight: 300;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      max-width: 680px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.35s;
+    }
+
+    h1 strong { font-weight: 600; }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(255,255,255,0.5);
+      margin: 36px 0;
+      opacity: 0;
+      animation: expandW 0.5s ease forwards 0.5s;
+      transform-origin: left;
+    }
+
+    .sub {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--muted);
+      max-width: 420px;
+      font-weight: 400;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.55s;
+    }
+
+    /* mesh zone — canvas lives inside here */
+    .mesh-zone {
+      position: relative;
+      margin: 72px -40px 0;
+      overflow: hidden;
+    }
+
+    .mesh-zone canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .lower {
+      position: relative;
+      z-index: 1;
+      background: transparent;
+      padding: 48px 40px 0;
+    }
+
+    .info-row {
+      display: flex;
+      gap: 56px;
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+      padding-bottom: 72px;
+    }
+
+    .info-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .info-val {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 40px 36px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: transparent;
+      margin: 0 -40px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 1s;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes expandW {
+      from { opacity: 0; transform: scaleX(0); }
+      to   { opacity: 1; transform: scaleX(1); }
+    }
+
+    @media (max-width: 500px) {
+      .page { padding: 0 24px; }
+      .mesh-zone { margin: 72px -24px 0; }
+      .lower { padding: 48px 24px 0; }
+      .info-row { gap: 32px; flex-wrap: wrap; }
+      footer { margin: 0 -24px; padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <header>
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(7,8)">
+            <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
+            <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        Cloudflash
+      </div>
+      <div class="status-dot">
+        <span class="dot"></span>
+        In development
+      </div>
+    </header>
+
+    <main class="hero">
+      <h1><strong>Cloudflash</strong><br>is relaunching.</h1>
+      <div class="divider"></div>
+      <p class="sub">We're coming back with a new generation of AI-assisted products — desktop and mobile apps, and a fully redesigned web experience. More to share soon.</p>
+
+      <div class="mesh-zone">
+        <canvas id="mesh"></canvas>
+        <div class="lower">
+          <div class="info-row">
+            <div class="info-item">
+              <div class="info-label">Status</div>
+              <div class="info-val">Relaunching</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Expected</div>
+              <div class="info-val">2026</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Platforms</div>
+              <div class="info-val">Web · Desktop · Mobile</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Collaboration</div>
+              <div class="info-val"><a href="mailto:hello@cloudflash.io" style="color:#fff;text-decoration:none;">Open — get in touch</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <span>© 2026 Cloudflash, Inc.</span>
+      <span>hello@cloudflash.io</span>
+    </footer>
+  </div>
+
+  <script>
+    const meshZone = document.querySelector('.mesh-zone');
+    const canvas   = document.getElementById('mesh');
+    const ctx      = canvas.getContext('2d');
+
+    // ── tweak these ──
+    const NODE_COUNT       = 40;
+    const MAX_DIST         = 120;
+    const SPEED            = 0.25;
+    const NODE_RADIUS      = 2.5;
+    const LINE_OPACITY_MAX = 0.3;
+    const NODE_OPACITY     = 0.50;
+    const BG_COLOR         = '#1a6bbf';
+    // ─────────────────
+
+    let nodes = [], W, H;
+
+    function resize() {
+      W = canvas.width  = meshZone.offsetWidth;
+      H = canvas.height = meshZone.offsetHeight;
+    }
+
+    function initNodes() {
+      nodes = Array.from({ length: NODE_COUNT }, () => ({
+        x:  Math.random() * W,
+        y:  Math.random() * H,
+        vx: (Math.random() - 0.5) * SPEED,
+        vy: (Math.random() - 0.5) * SPEED,
+      }));
+    }
+
+    function draw() {
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, W, H);
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx   = nodes[i].x - nodes[j].x;
+          const dy   = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < MAX_DIST) {
+            const alpha = LINE_OPACITY_MAX * (1 - dist / MAX_DIST);
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const n of nodes) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, NODE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${NODE_OPACITY})`;
+        ctx.fill();
+      }
+
+      for (const n of nodes) {
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => { resize(); });
+
+    // wait for layout to settle before reading dimensions
+    window.addEventListener('load', () => {
+      resize();
+      initNodes();
+      draw();
+    });
+  </script>
+
+</body>
+</html>
