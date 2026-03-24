@@ -53,7 +53,7 @@
       letter-spacing: -0.01em;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 0.1em;
     }
 
     .logo-icon { width: 32px; height: 32px; flex-shrink: 0; }
@@ -126,7 +126,9 @@
     /* mesh zone — canvas lives inside here */
     .mesh-zone {
       position: relative;
-      margin: 72px -40px 0;
+      width: 100vw;
+      margin-top: 72px;
+      margin-left: calc(-50vw + 50%);
       overflow: hidden;
     }
 
@@ -142,6 +144,8 @@
       position: relative;
       z-index: 1;
       background: transparent;
+      max-width: 900px;
+      margin: 0 auto;
       padding: 48px 40px 0;
     }
 
@@ -193,7 +197,6 @@
 
     @media (max-width: 500px) {
       .page { padding: 0 24px; }
-      .mesh-zone { margin: 72px -24px 0; }
       .lower { padding: 48px 24px 0; }
       .info-row { gap: 32px; flex-wrap: wrap; }
       footer { margin: 0 -24px; padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
@@ -242,7 +245,7 @@
             </div>
             <div class="info-item">
               <div class="info-label">Collaboration</div>
-              <div class="info-val"><a href="mailto:hello@cloudflash.com" style="color:#fff;text-decoration:none;">Open — get in touch</a></div>
+              <div class="info-val"><a id="contact-link" href="#" style="color:#fff;text-decoration:none;">Open — get in touch</a></div>
             </div>
           </div>
         </div>
@@ -251,9 +254,18 @@
 
     <footer>
       <span>© 2026 Cloudflash, Inc.</span>
-      <span>hello@cloudflash.com</span>
+      <span id="footer-email"></span>
     </footer>
   </div>
+
+  <script>
+    (function() {
+      const e = atob('aGVsbG9AY2xvdWRmbGFzaC5jb20=');
+      const link = document.getElementById('contact-link');
+      link.href = 'mailto:' + e;
+      document.getElementById('footer-email').textContent = e;
+    })();
+  </script>
 
   <script>
     const meshZone = document.querySelector('.mesh-zone');
