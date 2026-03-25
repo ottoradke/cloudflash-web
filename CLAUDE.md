@@ -35,6 +35,16 @@ The entire application lives in `index.html` with three embedded sections:
 
 Typography is loaded from Google Fonts (Inter).
 
+## Analytics
+
+Vercel Web Analytics is enabled via a single script tag in `<head>`:
+
+```html
+<script defer src="/_vercel/insights/script.js"></script>
+```
+
+This script is served by Vercel's edge network and only active in production — it does nothing when running locally.
+
 ## Email Obfuscation
 
 The contact email (`hello@cloudflash.com`) is **never written as plain text** in the HTML source. It is base64-encoded and injected at runtime via JavaScript to prevent scraper harvesting:
