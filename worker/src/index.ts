@@ -456,6 +456,41 @@ export default {
       return handleUnsubscribe(url, env);
     }
 
+    if (url.pathname === "/resend-to" && request.method === "GET") {
+      const email = url.searchParams.get("email");
+      if (!email) return new Response("Missing email", { status: 400 });
+
+      const issue = await env.DB
+        .prepare("SELECT subject, html_body FROM issues ORDER BY id DESC LIMIT 1")
+        .first<{ subject: string; html_body: string }>();
+      if (!issue) return new Response("No issues found", { status: 404 });
+
+      const sub = await env.DB
+        .prepare("SELECT unsubscribe_token FROM subscribers WHERE email = ? AND confirmed = 1")
+        .bind(email)
+        .first<{ unsubscribe_token: string }>();
+      if (!sub) return new Response("Subscriber not found", { status: 404 });
+
+      const html = issue.html_body.replace("{{UNSUBSCRIBE_TOKEN}}", sub.unsubscribe_token);
+
+      try {
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.RESEND_API_KEY}` },
+          body: JSON.stringify({ from: "Fintech Briefing <briefing@cloudflash.com>", to: [email], subject: issue.subject, html }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          return new Response(JSON.stringify({ error: `Resend error: ${err}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+        }
+
+        return new Response(JSON.stringify({ status: "sent", to: email }), { headers: { "Content-Type": "application/json" } });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     if (url.pathname === "/test-tickers") {
       const result = await fetchTickers(env.FINNHUB_API_KEY);
       return new Response(JSON.stringify(result, null, 2), {

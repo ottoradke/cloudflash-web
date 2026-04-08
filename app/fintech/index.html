@@ -352,7 +352,7 @@
 
     <header>
       <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloudflash logo">
           <g transform="translate(7,8)">
             <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
             <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
@@ -375,6 +375,7 @@
         <p class="tagline">Written by AI, edited by nobody — <span id="tagline-rotate" style="transition:opacity 0.5s ease;"></span></p>
 
         <form class="signup-form" id="signup-form">
+          <label for="email-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
           <input type="email" id="email-input" placeholder="you@example.com" required autocomplete="email" />
           <button type="submit" id="submit-btn">Subscribe →</button>
         </form>
@@ -420,7 +421,7 @@
   </div>
 
   <div class="mesh-zone">
-    <canvas id="mesh"></canvas>
+    <canvas id="mesh" aria-hidden="true"></canvas>
     <div class="lower">
       <div class="info-row">
         <div class="info-item">
@@ -445,7 +446,7 @@
 
   <footer>
     <span>© 2026 Cloudflash, Inc. · Est. 2000</span>
-    <span>cloudflash.com</span>
+    <span id="footer-email"></span>
   </footer>
 
   <script>
@@ -532,9 +533,18 @@
   </script>
 
   <script>
+    (function() {
+      const e = atob('aGVsbG9AY2xvdWRmbGFzaC5jb20=');
+      document.getElementById('footer-email').textContent = e;
+    })();
+  </script>
+
+  <script>
     const meshZone = document.querySelector('.mesh-zone');
     const canvas   = document.getElementById('mesh');
+    if (!meshZone || !canvas) return;
     const ctx      = canvas.getContext('2d');
+    if (!ctx) return;
 
     // ── tweak these ──
     const NODE_COUNT       = 40;
