@@ -104,7 +104,7 @@ export function buildEmailHtml(
       <tr><td>${tickerHtml}</td></tr>
       <tr><td style="padding:32px 0 0;border-top:1px solid #eee;font-family:Arial,sans-serif;font-size:12px;color:#bbb;line-height:1.6">
         <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Yahoo Finance</p>
-        <p style="margin:0">© 2026 Cloudflash, Inc. · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
+        <p style="margin:0">© 2026 Cloudflash, Inc. · Est. 2000 · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
       </td></tr>
     </table>
   </td></tr>
