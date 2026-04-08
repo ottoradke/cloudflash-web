@@ -459,9 +459,11 @@
         });
         const data = await res.json();
         if (res.ok) {
+          form.style.display = 'none';
+          document.querySelector('.form-fine').style.display = 'none';
+          document.querySelector('.form-fine + .form-fine').style.display = 'none';
           msg.textContent = 'Check your inbox to confirm your subscription.';
           msg.className = 'form-message success';
-          emailInput.value = '';
         } else {
           msg.textContent = data.error || 'Something went wrong. Please try again.';
           msg.className = 'form-message error';

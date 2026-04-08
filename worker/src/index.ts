@@ -297,10 +297,31 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
   return jsonResponse({ status: "confirmation_sent" });
 }
 
-async function handleConfirm(url: URL, env: Env): Promise<Response> {
+async function handleConfirm(request: Request, url: URL, env: Env): Promise<Response> {
   const token = url.searchParams.get("token");
   if (!token) return new Response("Missing token", { status: 400 });
 
+  // GET: show confirmation page with a button — prevents security scanners from auto-confirming
+  if (request.method === "GET") {
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirm — The Daily Fintech Briefing</title></head>
+<body style="margin:0;padding:0;background:#2179c8;font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="max-width:420px;padding:48px 32px;text-align:center">
+    <p style="margin:0 0 8px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em">The Daily Fintech Briefing</p>
+    <h1 style="margin:0 0 16px;font-size:26px;font-weight:600;color:#fff;line-height:1.2">Confirm your subscription</h1>
+    <p style="margin:0 0 32px;font-size:15px;color:rgba(255,255,255,0.7);line-height:1.6">Click below to start receiving the briefing each weekday morning at 7:30am PT.</p>
+    <form method="POST" action="/confirm?token=${token}">
+      <button type="submit" style="background:#fff;color:#1a5fa8;border:none;border-radius:4px;padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer">Confirm subscription →</button>
+    </form>
+  </div>
+</body>
+</html>`;
+    return new Response(html, { headers: { "Content-Type": "text/html" } });
+  }
+
+  // POST: actually confirm
   const result = await env.DB
     .prepare("UPDATE subscribers SET confirmed = 1 WHERE unsubscribe_token = ? AND confirmed = 0 RETURNING email")
     .bind(token)
@@ -424,8 +445,8 @@ export default {
       return handleSubscribe(request, env);
     }
 
-    if (url.pathname === "/confirm" && request.method === "GET") {
-      return handleConfirm(url, env);
+    if (url.pathname === "/confirm" && (request.method === "GET" || request.method === "POST")) {
+      return handleConfirm(request, url, env);
     }
 
     if (url.pathname === "/unsubscribe" && request.method === "GET") {
