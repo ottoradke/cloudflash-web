@@ -171,12 +171,15 @@ async function generateStories(
     throw new Error(`Anthropic API error: ${res.status} ${err}`);
   }
 
-  const data = await res.json() as {
+  const rawText = await res.text();
+  const data = JSON.parse(rawText) as {
     content: Array<{ type: string; text: string }>;
   };
   const text = data.content[0]?.text || "[]";
 
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  // Strip markdown code fences if Claude wraps the response
+  const stripped = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+  const jsonMatch = stripped.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error("Could not parse stories JSON from Claude");
   return JSON.parse(jsonMatch[0]) as Story[];
 }
