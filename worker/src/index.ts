@@ -271,7 +271,7 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
       .run();
   }
 
-  const confirmUrl = `https://cloudflash-briefing.ottoradke.workers.dev/confirm?token=${token}`;
+  const confirmUrl = `https://api.cloudflash.com/confirm?token=${token}`;
   const confirmHtml = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:500px;margin:60px auto;padding:0 24px">
     <p style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.08em">The Daily Fintech Briefing</p>
     <h2 style="font-family:Georgia,serif;color:#111">Confirm your subscription</h2>

@@ -452,7 +452,7 @@
       msg.className = 'form-message';
 
       try {
-        const res = await fetch('https://cloudflash-briefing.ottoradke.workers.dev/subscribe', {
+        const res = await fetch('https://api.cloudflash.com/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: emailInput.value }),
