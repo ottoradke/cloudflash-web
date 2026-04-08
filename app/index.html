@@ -111,33 +111,48 @@
 
     h1 strong { font-weight: 600; }
 
-    .word-strike {
+    .word-swap {
       position: relative;
       display: inline-block;
     }
 
-    .word-old {
+    .word-swap span {
       display: inline-block;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease, transform 0.4s ease, text-decoration 0.3s ease;
     }
 
-    .word-old.struck {
+    .word-swap .w-old {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .word-swap .w-old.striking {
       text-decoration: line-through;
       opacity: 0.4;
     }
 
-    .word-new {
+    .word-swap .w-old.hidden {
+      opacity: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .word-swap .w-new {
       position: absolute;
       left: 0;
       white-space: nowrap;
       opacity: 0;
       transform: translateY(6px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
     }
 
-    .word-new.visible {
+    .word-swap .w-new.visible {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    .word-swap .w-new.hiding {
+      opacity: 0;
+      transform: translateY(-6px);
     }
 
     .divider {
@@ -259,7 +274,7 @@
     </header>
 
     <main class="hero">
-      <h1><strong>Cloudflash</strong><br>is <span class="word-strike"><span class="word-old" id="word-old">relaunching</span><span class="word-new" id="word-new">launching</span></span>.</h1>
+      <h1><strong>Cloudflash</strong><br>is <span class="word-swap"><span class="w-old" id="w-old">relaunching</span><span class="w-new" id="w-new">launching</span></span>.</h1>
       <div class="divider"></div>
       <p class="sub">We're coming back with a new generation of AI-assisted products — desktop &amp; mobile apps, and full web experiences. More to share soon.</p>
     </main>
@@ -313,12 +328,38 @@
   </footer>
 
   <script>
-    // Strike "relaunching" then reveal "launching"
-    setTimeout(() => {
-      document.getElementById('word-old').classList.add('struck');
+    const wOld = document.getElementById('w-old');
+    const wNew = document.getElementById('w-new');
+
+    function toNew() {
+      // Strike old
+      wOld.classList.add('striking');
       setTimeout(() => {
-        document.getElementById('word-new').classList.add('visible');
+        // Reveal new
+        wNew.classList.remove('hiding');
+        wNew.classList.add('visible');
+        setTimeout(() => {
+          // Hide old completely
+          wOld.classList.add('hidden');
+        }, 400);
       }, 500);
+    }
+
+    function toOld() {
+      // Fade out new
+      wNew.classList.add('hiding');
+      wNew.classList.remove('visible');
+      setTimeout(() => {
+        // Restore old clean
+        wOld.classList.remove('striking', 'hidden');
+        setTimeout(toNew, 1800);
+      }, 400);
+    }
+
+    // Initial run
+    setTimeout(() => {
+      toNew();
+      setInterval(toOld, 12000);
     }, 1800);
   </script>
 
