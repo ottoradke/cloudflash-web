@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: #2179c8;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      width: 1200px;
+      height: 630px;
+      background: #2179c8;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 72px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 600px;
+      height: 630px;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.12) 1.5px, transparent 1.5px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-text {
+      font-size: 18px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: -0.01em;
+    }
+    .logo-sep {
+      color: rgba(255,255,255,0.25);
+      font-weight: 300;
+      margin: 0 2px;
+    }
+    .logo-product {
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 66px;
+      font-weight: 300;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 28px;
+      max-width: 800px;
+    }
+    h1 strong { font-weight: 600; }
+    .meta-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 8px;
+    }
+    .meta-item .label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 6px;
+    }
+    .meta-item .val {
+      font-size: 17px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+    }
+    .footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .domain {
+      font-size: 16px;
+      color: rgba(255,255,255,0.4);
+    }
+    .cta {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 10px 22px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-row">
+      <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(7,8)">
+          <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.85)"/>
+          <rect x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.85)"/>
+        </g>
+      </svg>
+      <span class="logo-text">Cloudflash <span class="logo-sep">/</span> <span class="logo-product">The Daily Fintech Briefing</span></span>
+    </div>
+
+    <div class="main">
+      <p class="eyebrow">A product by Cloudflash</p>
+      <h1>Fintech news,<br>without <strong>the noise.</strong></h1>
+      <div class="meta-row">
+        <div class="meta-item">
+          <div class="label">Stories</div>
+          <div class="val">10 per issue</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Tickers</div>
+          <div class="val">11 stocks</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Delivery</div>
+          <div class="val">7:30am PT</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Price</div>
+          <div class="val">Free</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-row">
+      <span class="domain">cloudflash.com/fintech</span>
+      <span class="cta">Subscribe free at cloudflash.com/fintech →</span>
+    </div>
+  </div>
+</body>
+</html>
