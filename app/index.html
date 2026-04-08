@@ -356,11 +356,11 @@
       }, 400);
     }
 
-    // Initial run
+    // Initial run: wait 6s, then cycle every 6s
     setTimeout(() => {
       toNew();
-      setInterval(toOld, 12000);
-    }, 1800);
+      setInterval(toOld, 6000);
+    }, 6000);
   </script>
 
   <script>
