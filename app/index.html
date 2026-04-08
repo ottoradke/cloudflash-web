@@ -111,6 +111,35 @@
 
     h1 strong { font-weight: 600; }
 
+    .word-strike {
+      position: relative;
+      display: inline-block;
+    }
+
+    .word-old {
+      display: inline-block;
+      transition: opacity 0.3s ease;
+    }
+
+    .word-old.struck {
+      text-decoration: line-through;
+      opacity: 0.4;
+    }
+
+    .word-new {
+      position: absolute;
+      left: 0;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .word-new.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .divider {
       width: 40px;
       height: 1px;
@@ -230,7 +259,7 @@
     </header>
 
     <main class="hero">
-      <h1><strong>Cloudflash</strong><br>is relaunching.</h1>
+      <h1><strong>Cloudflash</strong><br>is <span class="word-strike"><span class="word-old" id="word-old">relaunching</span><span class="word-new" id="word-new">launching</span></span>.</h1>
       <div class="divider"></div>
       <p class="sub">We're coming back with a new generation of AI-assisted products — desktop &amp; mobile apps, and full web experiences. More to share soon.</p>
     </main>
@@ -282,6 +311,16 @@
     <span>© 2026 Cloudflash, Inc.</span>
     <span id="footer-email"></span>
   </footer>
+
+  <script>
+    // Strike "relaunching" then reveal "launching"
+    setTimeout(() => {
+      document.getElementById('word-old').classList.add('struck');
+      setTimeout(() => {
+        document.getElementById('word-new').classList.add('visible');
+      }, 500);
+    }, 1800);
+  </script>
 
   <script>
     (function() {
