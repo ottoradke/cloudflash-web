@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Daily Fintech Briefing — Cloudflash</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script defer src="/_vercel/insights/script.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #2179c8;
+      --bg-dark: #1560aa;
+      --border:  rgba(255,255,255,0.18);
+      --text:    #ffffff;
+      --muted:   rgba(255,255,255,0.62);
+      --accent:  rgba(255,255,255,0.90);
+    }
+
+    html, body {
+      min-height: 100%;
+      overflow-x: clip;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Nav */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.1s;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-blink { animation: blink 1.8s step-end infinite; }
+
+    .logo-sep {
+      color: var(--border);
+      font-weight: 300;
+      margin: 0 2px;
+    }
+
+    .logo-product {
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .back-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 400;
+      transition: color 0.15s;
+    }
+
+    .back-link:hover { color: var(--text); }
+
+    /* Hero */
+    .hero {
+      padding: 80px 0 64px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.3s;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+      font-weight: 300;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      max-width: 640px;
+      margin-bottom: 20px;
+    }
+
+    h1 strong { font-weight: 600; }
+    h1 .accent { color: rgba(255,255,255,0.7); font-style: italic; }
+
+    .tagline-sub {
+      font-size: 0.95rem;
+      color: var(--text);
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 500px;
+      margin-bottom: 36px;
+      font-weight: 400;
+      min-height: 3.4em;
+    }
+
+    /* Signup form */
+    .signup-form {
+      display: flex;
+      gap: 10px;
+      max-width: 440px;
+      margin-bottom: 12px;
+    }
+
+    .signup-form input[type="email"] {
+      flex: 1;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .signup-form input[type="email"]::placeholder { color: rgba(255,255,255,0.4); }
+    .signup-form input[type="email"]:focus {
+      border-color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.16);
+    }
+
+    .signup-form button {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .signup-form button:hover { background: #fff; }
+    .signup-form button:disabled { opacity: 0.6; cursor: default; }
+
+    .form-fine {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .form-message {
+      font-size: 0.82rem;
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+
+    .form-message.success { color: #a8f0c6; }
+    .form-message.error { color: #ffaaaa; }
+
+    /* What it is */
+    .section {
+      padding: 64px 0;
+      border-top: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.5s;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 40px;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      padding-top: 4px;
+    }
+
+    .section-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .feature-item {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px 18px;
+    }
+
+    .feature-num {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .feature-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Meta strip */
+    .meta-strip {
+      border-top: 1px solid var(--border);
+      padding: 48px 0 72px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.65s;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 56px;
+    }
+
+    .meta-item .meta-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .meta-item .meta-val {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* Footer */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 40px 36px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.8s;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 0 24px; }
+      footer { padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
+      .section-grid { grid-template-columns: 1fr; gap: 20px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .signup-form { flex-direction: column; }
+      .meta-row { gap: 24px 20px; flex-wrap: wrap; }
+      .meta-item { flex: 1 1 calc(50% - 10px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <header>
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(7,8)">
+            <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
+            <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        Cloudflash
+        <span class="logo-sep">/</span>
+        <span class="logo-product">The Daily Fintech Briefing</span>
+      </div>
+      <a href="/" class="back-link">← cloudflash.com</a>
+    </header>
+
+    <main>
+
+      <!-- Hero -->
+      <div class="hero">
+        <p class="eyebrow">A product by Cloudflash</p>
+        <h1>Fintech news, without <strong>the <span class="accent">noise.</span></strong></h1>
+        <p class="tagline-sub">Ten stories. Eleven tickers. Every weekday at 7:30am PT.</p>
+        <p class="tagline" id="tagline"></p>
+
+        <form class="signup-form" id="signup-form">
+          <input type="email" id="email-input" placeholder="you@example.com" required autocomplete="email" />
+          <button type="submit" id="submit-btn">Subscribe →</button>
+        </form>
+        <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
+        <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
+        <p class="form-message" id="form-message"></p>
+      </div>
+
+      <!-- What it is -->
+      <div class="section">
+        <div class="section-grid">
+          <div class="section-label">What it is</div>
+          <div>
+            <p class="section-desc">A weekday AI-generated email newsletter covering the people, companies, and technologies reshaping financial services. Ten stories, every morning at 7:30am PT.</p>
+            <div class="feature-grid">
+              <div class="feature-item">
+                <div class="feature-num">01</div>
+                <div class="feature-title">AI-prioritized stories</div>
+                <div class="feature-desc">The most important fintech news, ranked and written each morning.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-num">02</div>
+                <div class="feature-title">Vendor watchlist</div>
+                <div class="feature-desc">Stories on FIS, Jack Henry, Q2, Temenos, and dozens more — always front of queue.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-num">03</div>
+                <div class="feature-title">Market open prices</div>
+                <div class="feature-desc">Live prices for 11 fintech stocks at 10:30am ET, every issue.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-num">04</div>
+                <div class="feature-title">Editorial tone</div>
+                <div class="feature-desc">Dry, witty, editorial. A smart colleague summarizing the news.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Meta strip -->
+    <div class="meta-strip">
+      <div class="meta-row">
+        <div class="meta-item">
+          <div class="meta-label">Cadence</div>
+          <div class="meta-val">Every weekday</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Delivery</div>
+          <div class="meta-val">7:30am PT</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Stories</div>
+          <div class="meta-val">10 per issue</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Price</div>
+          <div class="meta-val">Free</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>© 2026 Cloudflash, Inc.</span>
+    <span>cloudflash.com</span>
+  </footer>
+
+  <script>
+    // Rotating taglines
+    const taglines = [
+      "Written by AI, edited by nobody — which is either a feature or a disclaimer depending on your risk tolerance.",
+      "Written by AI, edited by nobody — verify before forwarding to your board.",
+    ];
+    const el = document.getElementById('tagline');
+    el.textContent = taglines[Math.floor(Math.random() * taglines.length)];
+
+    // Signup form
+    const form = document.getElementById('signup-form');
+    const emailInput = document.getElementById('email-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const msg = document.getElementById('form-message');
+
+    // Handle ?status= redirects from confirm/unsubscribe
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    if (status === 'confirmed') {
+      msg.textContent = "You're subscribed. See you tomorrow morning.";
+      msg.className = 'form-message success';
+    } else if (status === 'already_confirmed') {
+      msg.textContent = "You're already subscribed.";
+      msg.className = 'form-message success';
+    } else if (status === 'unsubscribed') {
+      msg.textContent = "You've been unsubscribed.";
+      msg.className = 'form-message success';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      msg.textContent = '';
+      msg.className = 'form-message';
+
+      try {
+        const res = await fetch('https://cloudflash-briefing.ottoradke.workers.dev/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput.value }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = 'Check your inbox to confirm your subscription.';
+          msg.className = 'form-message success';
+          emailInput.value = '';
+        } else {
+          msg.textContent = data.error || 'Something went wrong. Please try again.';
+          msg.className = 'form-message error';
+        }
+      } catch {
+        msg.textContent = 'Something went wrong. Please try again.';
+        msg.className = 'form-message error';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe →';
+      }
+    });
+  </script>
+
+</body>
+</html>

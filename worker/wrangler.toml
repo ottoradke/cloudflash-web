@@ -1,0 +1,15 @@
+name = "cloudflash-briefing"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[triggers]
+crons = ["30 7 * * *"]
+
+[vars]
+# Secrets are stored via `wrangler secret put` — not here.
+# Listed for reference only: ANTHROPIC_API_KEY, RESEND_API_KEY, TAVILY_API_KEY, VERCEL_DEPLOY_HOOK
+
+[[d1_databases]]
+binding = "DB"
+database_name = "briefing-db"
+database_id = "4f6e864a-cbc0-4e11-9988-c68f84a7ca3c"
