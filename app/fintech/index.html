@@ -540,6 +540,7 @@
   </script>
 
   <script>
+    (function() {
     const meshZone = document.querySelector('.mesh-zone');
     const canvas   = document.getElementById('mesh');
     if (!meshZone || !canvas) return;
@@ -617,6 +618,7 @@
       initNodes();
       draw();
     });
+    })();
   </script>
 
 </body>
