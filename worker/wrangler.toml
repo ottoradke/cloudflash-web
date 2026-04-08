@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [triggers]
-crons = ["30 14 * * *"]
+crons = ["30 14 * * 1-5"]
 
 [vars]
 # Secrets are stored via `wrangler secret put` — not here.
