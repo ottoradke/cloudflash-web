@@ -18,6 +18,7 @@
       --text:    #ffffff;
       --muted:   rgba(255,255,255,0.62);
       --accent:  rgba(255,255,255,0.90);
+      --canvas-bg: #1a6bbf;
     }
 
     html, body {
@@ -256,20 +257,38 @@
       line-height: 1.5;
     }
 
-    /* Meta strip */
-    .meta-strip {
-      border-top: 1px solid var(--border);
-      padding: 48px 0 72px;
-      opacity: 0;
-      animation: fadeUp 0.6s ease forwards 0.65s;
+    /* Canvas animation strip */
+    .mesh-zone {
+      position: relative;
+      width: 100%;
+      background: var(--canvas-bg);
+      overflow: hidden;
     }
 
-    .meta-row {
+    .mesh-zone canvas {
+      position: absolute;
+      top: 0; left: 0;
+      display: block;
+      z-index: 0;
+    }
+
+    .lower {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 40px 0;
+    }
+
+    .info-row {
       display: flex;
       gap: 56px;
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+      padding-bottom: 72px;
     }
 
-    .meta-item .meta-label {
+    .info-label {
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -277,7 +296,7 @@
       margin-bottom: 8px;
     }
 
-    .meta-item .meta-val {
+    .info-val {
       font-size: 0.95rem;
       font-weight: 500;
       color: var(--text);
@@ -306,12 +325,13 @@
 
     @media (max-width: 600px) {
       .page { padding: 0 24px; }
+      .lower { padding: 32px 24px 0; }
       footer { padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
       .section-grid { grid-template-columns: 1fr; gap: 20px; }
       .feature-grid { grid-template-columns: 1fr; }
       .signup-form { flex-direction: column; }
-      .meta-row { gap: 24px 20px; flex-wrap: wrap; }
-      .meta-item { flex: 1 1 calc(50% - 10px); }
+      .info-row { gap: 24px 20px; flex-wrap: wrap; }
+      .info-item { flex: 1 1 calc(50% - 10px); }
     }
   </style>
 </head>
@@ -386,28 +406,30 @@
 
     </main>
 
-    <!-- Meta strip -->
-    <div class="meta-strip">
-      <div class="meta-row">
-        <div class="meta-item">
-          <div class="meta-label">Cadence</div>
-          <div class="meta-val">Every weekday</div>
+  </div>
+
+  <div class="mesh-zone">
+    <canvas id="mesh"></canvas>
+    <div class="lower">
+      <div class="info-row">
+        <div class="info-item">
+          <div class="info-label">Cadence</div>
+          <div class="info-val">Every weekday</div>
         </div>
-        <div class="meta-item">
-          <div class="meta-label">Delivery</div>
-          <div class="meta-val">7:30am PT</div>
+        <div class="info-item">
+          <div class="info-label">Delivery</div>
+          <div class="info-val">7:30am PT</div>
         </div>
-        <div class="meta-item">
-          <div class="meta-label">Stories</div>
-          <div class="meta-val">10 per issue</div>
+        <div class="info-item">
+          <div class="info-label">Stories</div>
+          <div class="info-val">10 per issue</div>
         </div>
-        <div class="meta-item">
-          <div class="meta-label">Price</div>
-          <div class="meta-val">Free</div>
+        <div class="info-item">
+          <div class="info-label">Price</div>
+          <div class="info-val">Free</div>
         </div>
       </div>
     </div>
-
   </div>
 
   <footer>
@@ -475,6 +497,84 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Subscribe →';
       }
+    });
+  </script>
+
+  <script>
+    const meshZone = document.querySelector('.mesh-zone');
+    const canvas   = document.getElementById('mesh');
+    const ctx      = canvas.getContext('2d');
+
+    // ── tweak these ──
+    const NODE_COUNT       = 40;
+    const MAX_DIST         = 120;
+    const SPEED            = 0.25;
+    const NODE_RADIUS      = 2.5;
+    const LINE_OPACITY_MAX = 0.3;
+    const NODE_OPACITY     = 0.50;
+    const BG_COLOR         = '#1a6bbf';
+    // ─────────────────
+
+    let nodes = [], W, H;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = meshZone.offsetHeight;
+    }
+
+    function initNodes() {
+      nodes = Array.from({ length: NODE_COUNT }, () => ({
+        x:  Math.random() * W,
+        y:  Math.random() * H,
+        vx: (Math.random() - 0.5) * SPEED,
+        vy: (Math.random() - 0.5) * SPEED,
+      }));
+    }
+
+    function draw() {
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, W, H);
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx   = nodes[i].x - nodes[j].x;
+          const dy   = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < MAX_DIST) {
+            const alpha = LINE_OPACITY_MAX * (1 - dist / MAX_DIST);
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const n of nodes) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, NODE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${NODE_OPACITY})`;
+        ctx.fill();
+      }
+
+      for (const n of nodes) {
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => { resize(); initNodes(); });
+
+    window.addEventListener('load', () => {
+      resize();
+      initNodes();
+      draw();
     });
   </script>
 
