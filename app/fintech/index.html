@@ -438,17 +438,16 @@
             <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
             <p class="form-message" id="form-message"></p>
           </div>
-          <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;min-width:200px;max-width:240px">
-            <div class="feature-item subscriber-card" id="subscriber-card" style="display:none">
+          <div style="display:flex;flex-direction:row;gap:12px;flex-wrap:wrap">
+            <div class="feature-item subscriber-card" id="subscriber-card" style="display:none;flex-shrink:0;min-width:140px">
               <div class="feature-num">Subscribers</div>
               <div class="feature-title" id="subscriber-count-val" style="font-size:1.5rem;letter-spacing:-0.02em"></div>
               <div class="feature-desc">fintech professionals</div>
             </div>
-            <a class="issue-card" id="issue-card" href="#" style="display:none;padding:16px 18px;border-radius:6px">
+            <a class="issue-card" id="issue-card" href="#" style="display:none;padding:16px 18px;border-radius:6px;min-width:180px;max-width:220px">
               <div style="min-width:0">
                 <div class="issue-card-label">Latest issue</div>
                 <div class="issue-card-subject" id="issue-card-subject" style="font-size:0.82rem"></div>
-                <div class="issue-card-date" id="issue-card-date"></div>
               </div>
               <div class="issue-card-arrow" style="font-size:0.9rem">→</div>
             </a>
@@ -620,7 +619,6 @@
           const latest = issues[0];
           document.getElementById('issue-card').href = '/fintech/issue?date=' + latest.date;
           document.getElementById('issue-card-subject').textContent = latest.subject;
-          document.getElementById('issue-card-date').textContent = formatDate(latest.date);
           document.getElementById('issue-card').style.display = 'flex';
         })
         .catch(() => { /* silently hide the card if API is down */ });
