@@ -63,6 +63,12 @@ Here are today's articles:
 
 {ARTICLES}`;
 
+// --- API usage logging ---
+
+async function logApi(db: D1Database, service: string, success: boolean): Promise<void> {
+  await db.prepare("INSERT INTO api_logs (service, success) VALUES (?, ?)").bind(service, success ? 1 : 0).run();
+}
+
 // --- News fetching ---
 
 interface TavilyResult {
@@ -74,7 +80,8 @@ interface TavilyResult {
 
 async function fetchNewsFromSource(
   source: (typeof NEWS_SOURCES)[0],
-  tavilyKey: string
+  tavilyKey: string,
+  db: D1Database
 ): Promise<TavilyResult[]> {
   const query = source.query
     ? source.query
@@ -93,6 +100,8 @@ async function fetchNewsFromSource(
     }),
   });
 
+  await logApi(db, "tavily", res.ok);
+
   if (!res.ok) {
     console.error(`Tavily fetch failed for ${source.name}:`, res.status);
     return [];
@@ -102,9 +111,9 @@ async function fetchNewsFromSource(
   return (data.results || []).map((r) => ({ ...r, source: source.name }));
 }
 
-async function fetchAllNews(tavilyKey: string): Promise<TavilyResult[]> {
+async function fetchAllNews(tavilyKey: string, db: D1Database): Promise<TavilyResult[]> {
   const results = await Promise.all(
-    NEWS_SOURCES.map((s) => fetchNewsFromSource(s, tavilyKey))
+    NEWS_SOURCES.map((s) => fetchNewsFromSource(s, tavilyKey, db))
   );
   return results.flat();
 }
@@ -112,13 +121,14 @@ async function fetchAllNews(tavilyKey: string): Promise<TavilyResult[]> {
 // --- Ticker fetching ---
 
 
-async function fetchTickers(finnhubKey: string): Promise<TickerData[] | null> {
+async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerData[] | null> {
   try {
     const results = await Promise.all(
       TICKERS.map(async (symbol) => {
         const res = await fetch(
           `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubKey}`
         );
+        await logApi(db, "finnhub", res.ok);
         if (!res.ok) return null;
         const data = await res.json() as { c: number; d: number; dp: number };
         if (!data.c) return null;
@@ -144,6 +154,7 @@ async function fetchTickers(finnhubKey: string): Promise<TickerData[] | null> {
 async function generateStories(
   articles: TavilyResult[],
   anthropicKey: string,
+  db: D1Database,
   attempt = 1
 ): Promise<Story[]> {
   const articleText = articles
@@ -169,6 +180,8 @@ async function generateStories(
     }),
   });
 
+  await logApi(db, "anthropic", res.ok);
+
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Anthropic API error: ${res.status} ${err}`);
@@ -189,7 +202,7 @@ async function generateStories(
   } catch (err) {
     if (attempt < 3) {
       console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
-      return generateStories(articles, anthropicKey, attempt + 1);
+      return generateStories(articles, anthropicKey, db, attempt + 1);
     }
     throw err;
   }
@@ -212,7 +225,8 @@ async function sendBriefing(
   to: string[],
   subject: string,
   html: string,
-  unsubscribeToken: string
+  unsubscribeToken: string,
+  db: D1Database
 ): Promise<void> {
   const personalizedHtml = html.replace("{{UNSUBSCRIBE_TOKEN}}", unsubscribeToken);
 
@@ -229,6 +243,8 @@ async function sendBriefing(
       html: personalizedHtml,
     }),
   });
+
+  await logApi(db, "resend", res.ok);
 
   if (!res.ok) {
     const err = await res.text();
@@ -391,15 +407,15 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); // YYYY-MM-DD in PT
 
   console.log("Fetching news...");
-  const articles = await fetchAllNews(env.TAVILY_API_KEY);
+  const articles = await fetchAllNews(env.TAVILY_API_KEY, env.DB);
   console.log(`Fetched ${articles.length} articles`);
 
   console.log("Fetching tickers...");
-  const tickers = await fetchTickers(env.FINNHUB_API_KEY);
+  const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
   console.log(tickers ? `Fetched ${tickers.length} tickers` : "Ticker fetch failed — omitting");
 
   console.log("Generating stories with Claude...");
-  const stories = await generateStories(articles, env.ANTHROPIC_API_KEY);
+  const stories = await generateStories(articles, env.ANTHROPIC_API_KEY, env.DB);
   console.log(`Generated ${stories.length} stories`);
 
   const subject = `The Daily Fintech Briefing · ${date}`;
@@ -413,7 +429,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
     let sent = 0, failed = 0;
     for (const email of overrideTo) {
       try {
-        await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test");
+        await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test", env.DB);
         console.log(`Sent: ${email}`);
         sent++;
       } catch (err) {
@@ -438,7 +454,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
       await Promise.all(
         batch.map(async (sub) => {
           try {
-            await sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token);
+            await sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token, env.DB);
             console.log(`Sent: ${sub.email}`);
             sent++;
           } catch (err) {
@@ -687,6 +703,24 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/logs" && request.method === "GET") {
+      const periods = [1, 7, 14, 21, 28];
+      const services = ["tavily", "anthropic", "finnhub", "resend"];
+      const result: Record<string, Record<string, { calls: number; failures: number }>> = {};
+
+      for (const service of services) {
+        result[service] = {};
+        for (const days of periods) {
+          const row = await env.DB
+            .prepare(`SELECT COUNT(*) as calls, SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failures FROM api_logs WHERE service = ? AND created_at >= datetime('now', '-${days} days')`)
+            .bind(service)
+            .first<{ calls: number; failures: number }>();
+          result[service][`${days}d`] = { calls: row?.calls ?? 0, failures: row?.failures ?? 0 };
+        }
+      }
+      return jsonResponse(result);
+    }
+
     if (url.pathname === "/api/subscribers/count" && request.method === "GET") {
       const result = await env.DB
         .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1")
@@ -717,7 +751,10 @@ export default {
     if (url.pathname === "/preview" && request.method === "GET") {
       const key = url.searchParams.get("key");
       if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", { status: 401 });
+        return new Response("Unauthorized", {
+          status: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        });
       }
 
       const now = new Date();
@@ -726,7 +763,12 @@ export default {
       });
 
       const html = buildEmailHtml(MOCK_STORIES, MOCK_TICKERS, date);
-      return new Response(html, { headers: { "Content-Type": "text/html" } });
+      return new Response(html, {
+        headers: {
+          "Content-Type": "text/html",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
     return new Response("Not Found", { status: 404 });
