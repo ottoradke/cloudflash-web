@@ -24,7 +24,9 @@ Hosts `cloudflash.com` including the `/fintech` landing page, issue archive, and
 
 ### 2.2 Cloudflare Workers (Cron Trigger)
 
-A scheduled Worker runs the daily briefing pipeline at 7:30am PT (cron: `30 14 * * 1-5` in UTC). The Worker orchestrates the following steps in sequence:
+A scheduled Worker runs the daily briefing pipeline at 7:30am PT (cron: `30 14 * * 1-5` in UTC). The pipeline can also be triggered manually via `GET /run?key=PREVIEW_KEY`. Both the cron and manual trigger are protected by a duplicate send guard — if an issue already exists in D1 for today's date, the pipeline aborts immediately and logs the skip.
+
+The Worker orchestrates the following steps in sequence:
 
 - Fetches news from PYMNTS, Finextra, American Banker, Reuters, and Bloomberg via Tavily web search (6 queries)
 - Fetches live ticker prices for 11 fintech stocks via Finnhub, batched at 25/batch to stay under the 30 req/sec rate limit
@@ -411,8 +413,8 @@ All endpoints are on `api.cloudflash.com` (Cloudflare Worker).
 | POST | `/confirm?token=` | — | Confirm subscription |
 | GET | `/unsubscribe?token=` | — | Delete subscriber, redirect |
 | GET | `/resend-to?email=` | — | Resend latest issue to a subscriber |
-| GET | `/run` | — | Trigger a full pipeline run |
-| GET | `/test-run?email=` | — | Run pipeline, send only to one email |
+| GET | `/run?key=` | PREVIEW_KEY | Trigger a full pipeline run |
+| GET | `/test-run?email=&key=` | PREVIEW_KEY | Run pipeline, send only to one email |
 | GET | `/test-tickers` | — | Fetch and return live ticker data |
 | GET | `/preview?key=` | PREVIEW_KEY | Return mock email HTML |
 | GET | `/preview/live?key=` | PREVIEW_KEY | Re-run Claude on cached articles, save to previews |
