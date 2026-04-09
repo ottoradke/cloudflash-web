@@ -66,15 +66,15 @@ From address: `Fintech Briefing <otto@cloudflash.com>`. Domain `cloudflash.com` 
 
 Claude Sonnet 4 (`claude-sonnet-4-6`) is called once per daily run with a structured prompt that includes the collected news content and the full story-writing instructions from `SKILL.md`. The API key is stored as a Cloudflare Worker secret.
 
-### 2.6 Yahoo Finance Batch Endpoint
+### 2.6 Finnhub Ticker API
 
-A single unauthenticated GET request retrieves live prices for all 11 tickers simultaneously:
+Live prices are fetched from Finnhub (`finnhub.io`) using the authenticated quote endpoint, called once per ticker:
 
 ```
-GET https://query1.finance.yahoo.com/v7/finance/quote?symbols=ALKT,VYX,QTWO,FIS,FI,JKHY,ACIW,GDOT,MQ,NCNO,UPST
+GET https://finnhub.io/api/v1/quote?symbol=ALKT&token=<FINNHUB_API_KEY>
 ```
 
-Called at 7:30am PT (10:30am ET), one hour after market open, when prices have settled from the opening print. If the request fails, the ticker table is omitted from that day's issue with a "Market data unavailable" note.
+All 11 tickers are fetched in parallel at run time. The API key is stored as a Cloudflare Worker secret (`FINNHUB_API_KEY`). If the request fails, the ticker table is omitted from that day's issue. Called at market open (7:30am PT / 10:30am ET).
 
 ### 2.7 Repository Structure
 
@@ -332,6 +332,8 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 | `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
 | `RESEND_API_KEY` | Resend API key |
 | `VERCEL_DEPLOY_HOOK` | Vercel Deploy Hook URL to trigger archive rebuilds |
+| `FINNHUB_API_KEY` | Finnhub API key for live ticker prices |
+| `ALERT_EMAIL` | Email address for pipeline failure alerts (ottoradke@gmail.com) |
 | `CLOUDFLARE_API_TOKEN` | Stored in GitHub repository secrets for CI deployment |
 
 ---
@@ -342,7 +344,6 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 
 - Add Vercel Deploy Hook URL as a Cloudflare Worker secret to trigger archive rebuilds
 - Verify `cloudflash.com` domain in Resend (SPF, DKIM, DMARC)
-- Confirm Yahoo Finance batch endpoint still active (unofficial — monitor for breakage)
 
 ### 9.2 Near-term
 
