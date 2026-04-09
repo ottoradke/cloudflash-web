@@ -408,23 +408,30 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
 
   if (overrideTo) {
     console.log(`Test run — sending only to: ${overrideTo.join(", ")}`);
-    await Promise.all(
-      overrideTo.map((email) =>
-        sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test")
-      )
-    );
+    for (const email of overrideTo) {
+      await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test");
+    }
   } else {
     console.log("Fetching confirmed subscribers...");
     const subscribers = await env.DB
       .prepare("SELECT email, unsubscribe_token FROM subscribers WHERE confirmed = 1")
       .all<{ email: string; unsubscribe_token: string }>();
 
-    console.log(`Sending to ${subscribers.results.length} subscribers...`);
-    await Promise.all(
-      subscribers.results.map((sub) =>
-        sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token)
-      )
-    );
+    const subs = subscribers.results;
+    console.log(`Sending to ${subs.length} subscribers...`);
+
+    const BATCH = 4;
+    for (let i = 0; i < subs.length; i += BATCH) {
+      const batch = subs.slice(i, i + BATCH);
+      await Promise.all(
+        batch.map((sub) =>
+          sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token)
+        )
+      );
+      if (i + BATCH < subs.length) {
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+    }
   }
 
   if (env.VERCEL_DEPLOY_HOOK) {
