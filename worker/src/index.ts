@@ -65,8 +65,16 @@ Here are today's articles:
 
 // --- API usage logging ---
 
-async function logApi(db: D1Database, service: string, success: boolean): Promise<void> {
-  await db.prepare("INSERT INTO api_logs (service, success) VALUES (?, ?)").bind(service, success ? 1 : 0).run();
+async function logApi(
+  db: D1Database,
+  service: string,
+  success: boolean,
+  opts: { duration_ms?: number; tokens_used?: number; error_message?: string } = {}
+): Promise<void> {
+  await db
+    .prepare("INSERT INTO api_logs (service, success, duration_ms, tokens_used, error_message) VALUES (?, ?, ?, ?, ?)")
+    .bind(service, success ? 1 : 0, opts.duration_ms ?? null, opts.tokens_used ?? null, opts.error_message ?? null)
+    .run();
 }
 
 // --- News fetching ---
@@ -87,6 +95,7 @@ async function fetchNewsFromSource(
     ? source.query
     : `site:${source.domain} fintech banking`;
 
+  const tavilyStart = Date.now();
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -99,13 +108,16 @@ async function fetchNewsFromSource(
       include_answer: false,
     }),
   });
-
-  await logApi(db, "tavily", res.ok);
+  const tavilyDuration = Date.now() - tavilyStart;
 
   if (!res.ok) {
+    const errText = await res.text();
+    await logApi(db, "tavily", false, { duration_ms: tavilyDuration, error_message: `${res.status} ${errText}` });
     console.error(`Tavily fetch failed for ${source.name}:`, res.status);
     return [];
   }
+
+  await logApi(db, "tavily", true, { duration_ms: tavilyDuration });
 
   const data = await res.json() as { results: TavilyResult[] };
   return (data.results || []).map((r) => ({ ...r, source: source.name }));
@@ -125,11 +137,17 @@ async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerD
   try {
     const results = await Promise.all(
       TICKERS.map(async (symbol) => {
+        const start = Date.now();
         const res = await fetch(
           `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubKey}`
         );
-        await logApi(db, "finnhub", res.ok);
-        if (!res.ok) return null;
+        const duration_ms = Date.now() - start;
+        if (!res.ok) {
+          const errText = await res.text();
+          await logApi(db, "finnhub", false, { duration_ms, error_message: `${res.status} ${errText}` });
+          return null;
+        }
+        await logApi(db, "finnhub", true, { duration_ms });
         const data = await res.json() as { c: number; d: number; dp: number };
         if (!data.c) return null;
         return {
@@ -166,6 +184,7 @@ async function generateStories(
 
   const prompt = STORY_PROMPT.replace("{ARTICLES}", articleText);
 
+  const anthropicStart = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -179,18 +198,21 @@ async function generateStories(
       messages: [{ role: "user", content: prompt }],
     }),
   });
-
-  await logApi(db, "anthropic", res.ok);
+  const anthropicDuration = Date.now() - anthropicStart;
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Anthropic API error: ${res.status} ${err}`);
+    const errText = await res.text();
+    await logApi(db, "anthropic", false, { duration_ms: anthropicDuration, error_message: `${res.status} ${errText}` });
+    throw new Error(`Anthropic API error: ${res.status} ${errText}`);
   }
 
   const rawText = await res.text();
   const data = JSON.parse(rawText) as {
     content: Array<{ type: string; text: string }>;
+    usage?: { input_tokens: number; output_tokens: number };
   };
+  const tokens_used = data.usage ? data.usage.input_tokens + data.usage.output_tokens : undefined;
+  await logApi(db, "anthropic", true, { duration_ms: anthropicDuration, tokens_used });
   const text = data.content[0]?.text || "[]";
 
   // Strip markdown code fences if Claude wraps the response
@@ -230,6 +252,7 @@ async function sendBriefing(
 ): Promise<void> {
   const personalizedHtml = html.replace("{{UNSUBSCRIBE_TOKEN}}", unsubscribeToken);
 
+  const resendStart = Date.now();
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -243,13 +266,15 @@ async function sendBriefing(
       html: personalizedHtml,
     }),
   });
-
-  await logApi(db, "resend", res.ok);
+  const resendDuration = Date.now() - resendStart;
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error: ${res.status} ${err}`);
+    const errText = await res.text();
+    await logApi(db, "resend", false, { duration_ms: resendDuration, error_message: `${res.status} ${errText}` });
+    throw new Error(`Resend error: ${res.status} ${errText}`);
   }
+
+  await logApi(db, "resend", true, { duration_ms: resendDuration });
 }
 
 // --- Subscriber management ---
@@ -665,7 +690,7 @@ export default {
     }
 
     if (url.pathname === "/test-tickers") {
-      const result = await fetchTickers(env.FINNHUB_API_KEY);
+      const result = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
       return new Response(JSON.stringify(result, null, 2), {
         headers: { "Content-Type": "application/json" },
       });
