@@ -368,7 +368,7 @@ function htmlRedirect(location: string): Response {
 
 // --- Main pipeline ---
 
-async function runPipeline(env: Env): Promise<void> {
+async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const now = new Date();
   const date = now.toLocaleDateString("en-US", {
     weekday: "long",
@@ -397,17 +397,26 @@ async function runPipeline(env: Env): Promise<void> {
   console.log("Saving issue to D1...");
   await saveIssue(env.DB, dateISO, subject, html);
 
-  console.log("Fetching confirmed subscribers...");
-  const subscribers = await env.DB
-    .prepare("SELECT email, unsubscribe_token FROM subscribers WHERE confirmed = 1")
-    .all<{ email: string; unsubscribe_token: string }>();
+  if (overrideTo) {
+    console.log(`Test run — sending only to: ${overrideTo.join(", ")}`);
+    await Promise.all(
+      overrideTo.map((email) =>
+        sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test")
+      )
+    );
+  } else {
+    console.log("Fetching confirmed subscribers...");
+    const subscribers = await env.DB
+      .prepare("SELECT email, unsubscribe_token FROM subscribers WHERE confirmed = 1")
+      .all<{ email: string; unsubscribe_token: string }>();
 
-  console.log(`Sending to ${subscribers.results.length} subscribers...`);
-  await Promise.all(
-    subscribers.results.map((sub) =>
-      sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token)
-    )
-  );
+    console.log(`Sending to ${subscribers.results.length} subscribers...`);
+    await Promise.all(
+      subscribers.results.map((sub) =>
+        sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token)
+      )
+    );
+  }
 
   if (env.VERCEL_DEPLOY_HOOK) {
     await fetch(env.VERCEL_DEPLOY_HOOK, { method: "POST" });
@@ -496,6 +505,23 @@ export default {
       return new Response(JSON.stringify(result, null, 2), {
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    if (url.pathname === "/test-run") {
+      const email = url.searchParams.get("email");
+      if (!email) return new Response("Missing email", { status: 400 });
+      try {
+        await runPipeline(env, [email]);
+        return new Response(JSON.stringify({ status: "ok", sent_to: email }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify({ status: "error", message: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (url.pathname === "/run") {

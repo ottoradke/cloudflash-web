@@ -73,9 +73,13 @@ export function buildEmailHtml(
   const storyHtml = stories
     .map(
       (s, i) => `<tr><td style="padding:0 0 32px">
-      <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:26px;font-weight:bold;color:#6B7FA8;line-height:1">${i + 1}</p>
-      <p style="margin:0 0 8px;font-family:Georgia,serif;font-size:19px;font-weight:bold;color:#1a1a1a;line-height:1.3">${s.headline}</p>
-      <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#333;line-height:1.7">${s.body} <span style="font-family:Arial,sans-serif;font-size:12px;color:#999;white-space:nowrap">${s.cite} ↗</span></p>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+        <td style="vertical-align:top;width:70px;font-family:Arial,sans-serif;font-size:32px;font-weight:bold;color:#2179c8;line-height:1;padding:0 20px 20px 0">${i + 1}</td>
+        <td style="vertical-align:top">
+          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:19px;font-weight:bold;color:#1a1a1a;line-height:1.3">${s.headline}</p>
+          <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#333;line-height:1.7">${s.body} <span style="font-family:Arial,sans-serif;font-size:12px;color:#999;white-space:nowrap">${s.cite} ↗</span></p>
+        </td>
+      </tr></table>
     </td></tr>`
     )
     .join("");
@@ -86,25 +90,32 @@ export function buildEmailHtml(
 
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="X-UA-Compatible" content="IE=edge"></head>
 <body style="margin:0;padding:0;background:#fff">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff">
   <tr><td align="center">
-    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;padding:40px 24px">
+    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;padding:40px 24px">
       <tr><td style="padding:0 0 16px">
-        <h1 style="margin:0 0 6px;font-family:Georgia,serif;font-size:40px;font-weight:bold;color:#111;line-height:1.1">The Daily Fintech Briefing</h1>
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px"><tr>
+          <td style="vertical-align:middle;padding:0 10px 20px 0">
+            <img src="https://cloudflash.com/logo.png" width="52" height="52" alt="Cloudflash" style="display:block">
+          </td>
+          <td style="vertical-align:middle;padding:0 0 20px 0">
+            <h1 style="margin:0;font-family:Arial,sans-serif;font-size:36px;font-weight:bold;color:#111;line-height:1.1">The Daily Fintech Briefing</h1>
+          </td>
+        </tr></table>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td style="font-family:Arial,sans-serif;font-size:14px;color:#666">${date}</td>
           <td style="font-family:Arial,sans-serif;font-size:12px;color:#999;text-align:right">Forwarded this email? <a href="https://cloudflash.com/fintech" style="color:#999;text-decoration:underline">Subscribe here</a> for more.</td>
         </tr></table>
       </td></tr>
-      <tr><td style="padding:0 0 32px;border-bottom:3px solid #111"></td></tr>
-      <tr><td style="padding:32px 0 0"></td></tr>
+      <tr><td style="padding:0 0 16px;border-bottom:3px solid #111"></td></tr>
+      <tr><td style="padding:16px 0 0"></td></tr>
       ${storyHtml}
       <tr><td>${tickerHtml}</td></tr>
       <tr><td style="padding:32px 0 0;border-top:1px solid #eee;font-family:Arial,sans-serif;font-size:12px;color:#bbb;line-height:1.6">
         <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Yahoo Finance</p>
-        <p style="margin:0">© 2026 Cloudflash, Inc. · Est. 2000 · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
+        <p style="margin:0">&#169; 2026 Cloudflash, Inc. · Est. 2000 · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
       </td></tr>
     </table>
   </td></tr>
