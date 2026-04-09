@@ -206,35 +206,6 @@
     .form-message.success { color: #a8f0c6; }
     .form-message.error { color: #ffaaaa; }
 
-    .beta-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 20px;
-    }
-
-    .beta-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #6ee7b7;
-      flex-shrink: 0;
-      animation: pulse-dot 2.4s ease-in-out infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(0.85); }
-    }
-
-    .beta-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.7);
-      font-weight: 500;
-    }
-
     /* Latest issue card */
     .latest-issue {
       padding: 48px 0 0;
@@ -469,11 +440,12 @@
         </form>
         <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
         <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
-        <div class="beta-status">
-          <div class="beta-dot"></div>
-          <span class="beta-label">In Beta</span>
-        </div>
         <p class="form-message" id="form-message"></p>
+        <div class="feature-item subscriber-card" id="subscriber-card" style="display:none;margin-top:24px;max-width:160px">
+          <div class="feature-num">Subscribers</div>
+          <div class="feature-title" id="subscriber-count-val" style="font-size:1.5rem;letter-spacing:-0.02em"></div>
+          <div class="feature-desc">fintech professionals</div>
+        </div>
       </div>
 
       <!-- Latest issue -->
@@ -657,6 +629,14 @@
         })
         .catch(() => { /* silently hide the card if API is down */ });
 
+      fetch('https://api.cloudflash.com/api/subscribers/count')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.count) return;
+          document.getElementById('subscriber-count-val').textContent = data.count;
+          document.getElementById('subscriber-card').style.display = '';
+        })
+        .catch(() => {});
     })();
   </script>
 
