@@ -408,9 +408,18 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
 
   if (overrideTo) {
     console.log(`Test run — sending only to: ${overrideTo.join(", ")}`);
+    let sent = 0, failed = 0;
     for (const email of overrideTo) {
-      await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test");
+      try {
+        await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test");
+        console.log(`Sent: ${email}`);
+        sent++;
+      } catch (err) {
+        console.error(`Failed: ${email} —`, err);
+        failed++;
+      }
     }
+    console.log(`Test run complete — sent: ${sent}, failed: ${failed}`);
   } else {
     console.log("Fetching confirmed subscribers...");
     const subscribers = await env.DB
@@ -420,18 +429,27 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
     const subs = subscribers.results;
     console.log(`Sending to ${subs.length} subscribers...`);
 
+    let sent = 0, failed = 0;
     const BATCH = 4;
     for (let i = 0; i < subs.length; i += BATCH) {
       const batch = subs.slice(i, i + BATCH);
       await Promise.all(
-        batch.map((sub) =>
-          sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token)
-        )
+        batch.map(async (sub) => {
+          try {
+            await sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token);
+            console.log(`Sent: ${sub.email}`);
+            sent++;
+          } catch (err) {
+            console.error(`Failed: ${sub.email} —`, err);
+            failed++;
+          }
+        })
       );
       if (i + BATCH < subs.length) {
         await new Promise((r) => setTimeout(r, 1100));
       }
     }
+    console.log(`Send complete — sent: ${sent}, failed: ${failed}`);
   }
 
   if (env.VERCEL_DEPLOY_HOOK) {
