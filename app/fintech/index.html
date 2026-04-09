@@ -440,7 +440,7 @@
         </form>
         <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
         <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
-        <p class="form-fine subscriber-count" id="subscriber-count" style="margin-top:8px;display:none">Join <span id="subscriber-count-val"></span> fintech professionals already subscribed.</p>
+        <p class="form-fine" id="subscriber-count" style="margin-top:8px;display:none"><span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:3px;padding:1px 6px;font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;margin-right:6px;vertical-align:middle">Beta</span><span id="subscriber-count-val"></span> fintech professionals subscribed.</p>
         <p class="form-message" id="form-message"></p>
       </div>
 
@@ -624,6 +624,15 @@
           document.getElementById('latest-issue').style.display = '';
         })
         .catch(() => { /* silently hide the card if API is down */ });
+
+      fetch('https://api.cloudflash.com/api/subscribers/count')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.count) return;
+          document.getElementById('subscriber-count-val').textContent = data.count;
+          document.getElementById('subscriber-count').style.display = '';
+        })
+        .catch(() => {});
     })();
   </script>
 
