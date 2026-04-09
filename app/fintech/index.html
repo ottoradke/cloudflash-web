@@ -433,18 +433,22 @@
         <p class="tagline-sub">Ten stories. Eleven tickers. Every weekday at 7:30am PT.</p>
         <p class="tagline">Written by AI, edited by nobody — <span id="tagline-rotate" style="transition:opacity 0.5s ease;"></span></p>
 
-        <form class="signup-form" id="signup-form">
-          <label for="email-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
-          <input type="email" id="email-input" placeholder="you@example.com" required autocomplete="email" />
-          <button type="submit" id="submit-btn">Subscribe →</button>
-        </form>
-        <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
-        <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
-        <p class="form-message" id="form-message"></p>
-        <div class="feature-item subscriber-card" id="subscriber-card" style="display:none;margin-top:24px;max-width:160px">
-          <div class="feature-num">Subscribers</div>
-          <div class="feature-title" id="subscriber-count-val" style="font-size:1.5rem;letter-spacing:-0.02em"></div>
-          <div class="feature-desc">fintech professionals</div>
+        <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+          <div>
+            <form class="signup-form" id="signup-form">
+              <label for="email-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+              <input type="email" id="email-input" placeholder="you@example.com" required autocomplete="email" />
+              <button type="submit" id="submit-btn">Subscribe →</button>
+            </form>
+            <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
+            <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
+            <p class="form-message" id="form-message"></p>
+          </div>
+          <div class="feature-item subscriber-card" id="subscriber-card" style="display:none;flex-shrink:0;min-width:140px">
+            <div class="feature-num">Subscribers</div>
+            <div class="feature-title" id="subscriber-count-val" style="font-size:1.5rem;letter-spacing:-0.02em"></div>
+            <div class="feature-desc">fintech professionals</div>
+          </div>
         </div>
       </div>
 
