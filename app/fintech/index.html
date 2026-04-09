@@ -206,6 +206,65 @@
     .form-message.success { color: #a8f0c6; }
     .form-message.error { color: #ffaaaa; }
 
+    /* Latest issue card */
+    .latest-issue {
+      padding: 48px 0 0;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.45s;
+    }
+
+    .issue-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px 28px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .issue-card:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .issue-card-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .issue-card-subject {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .issue-card-date {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .issue-card-arrow {
+      font-size: 1.1rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: color 0.15s, transform 0.15s;
+    }
+
+    .issue-card:hover .issue-card-arrow {
+      color: var(--text);
+      transform: translateX(3px);
+    }
+
     /* What it is */
     .section {
       padding: 64px 0;
@@ -384,6 +443,18 @@
         <p class="form-message" id="form-message"></p>
       </div>
 
+      <!-- Latest issue -->
+      <div class="latest-issue" id="latest-issue" style="display:none">
+        <a class="issue-card" id="issue-card" href="#">
+          <div>
+            <div class="issue-card-label">Latest issue</div>
+            <div class="issue-card-subject" id="issue-card-subject"></div>
+            <div class="issue-card-date" id="issue-card-date"></div>
+          </div>
+          <div class="issue-card-arrow">→</div>
+        </a>
+      </div>
+
       <!-- What it is -->
       <div class="section">
         <div class="section-grid">
@@ -530,6 +601,29 @@
         submitBtn.textContent = 'Subscribe →';
       }
     });
+  </script>
+
+  <script>
+    (function () {
+      function formatDate(dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+        });
+      }
+
+      fetch('https://api.cloudflash.com/api/issues')
+        .then(r => r.json())
+        .then(issues => {
+          if (!issues.length) return;
+          const latest = issues[0];
+          document.getElementById('issue-card').href = '/fintech/issue?date=' + latest.date;
+          document.getElementById('issue-card-subject').textContent = latest.subject;
+          document.getElementById('issue-card-date').textContent = formatDate(latest.date);
+          document.getElementById('latest-issue').style.display = '';
+        })
+        .catch(() => { /* silently hide the card if API is down */ });
+    })();
   </script>
 
   <script>
