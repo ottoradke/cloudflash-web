@@ -133,32 +133,42 @@ async function fetchAllNews(tavilyKey: string, db: D1Database): Promise<TavilyRe
 // --- Ticker fetching ---
 
 
+const FINNHUB_BATCH = 25; // Finnhub limit: 30 calls/sec
+
 async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerData[] | null> {
   try {
-    const results = await Promise.all(
-      TICKERS.map(async (symbol) => {
-        const start = Date.now();
-        const res = await fetch(
-          `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubKey}`
-        );
-        const duration_ms = Date.now() - start;
-        if (!res.ok) {
-          const errText = await res.text();
-          await logApi(db, "finnhub", false, { duration_ms, error_message: `${res.status} ${errText}` });
-          return null;
-        }
-        await logApi(db, "finnhub", true, { duration_ms });
-        const data = await res.json() as { c: number; d: number; dp: number };
-        if (!data.c) return null;
-        return {
-          symbol,
-          price: data.c,
-          change: data.d,
-          changePercent: data.dp,
-        };
-      })
-    );
-    const tickers = results.filter((t): t is TickerData => t !== null);
+    const allResults: (TickerData | null)[] = [];
+    for (let i = 0; i < TICKERS.length; i += FINNHUB_BATCH) {
+      const batch = TICKERS.slice(i, i + FINNHUB_BATCH);
+      const batchResults = await Promise.all(
+        batch.map(async (symbol) => {
+          const start = Date.now();
+          const res = await fetch(
+            `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubKey}`
+          );
+          const duration_ms = Date.now() - start;
+          if (!res.ok) {
+            const errText = await res.text();
+            await logApi(db, "finnhub", false, { duration_ms, error_message: `${res.status} ${errText}` });
+            return null;
+          }
+          await logApi(db, "finnhub", true, { duration_ms });
+          const data = await res.json() as { c: number; d: number; dp: number };
+          if (!data.c) return null;
+          return {
+            symbol,
+            price: data.c,
+            change: data.d,
+            changePercent: data.dp,
+          };
+        })
+      );
+      allResults.push(...batchResults);
+      if (i + FINNHUB_BATCH < TICKERS.length) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
+    const tickers = allResults.filter((t): t is TickerData => t !== null);
     return tickers.length > 0 ? tickers : null;
   } catch (err) {
     console.error("Ticker fetch failed:", err);
