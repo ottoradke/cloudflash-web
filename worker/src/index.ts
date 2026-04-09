@@ -49,13 +49,13 @@ Stories involving these vendors should be bumped ahead of generic stories on the
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
 - A 3–5 sentence paragraph with the key facts, context, and a dry observation
-- End with: <cite>↗ Source Name</cite>
-
 Format your response as a JSON array of 10 objects:
 [
-  { "headline": "...", "body": "...", "cite": "Source Name" },
+  { "headline": "...", "body": "...", "cite": "Source Name", "url": "https://..." },
   ...
 ]
+
+Use the exact URL from the article for the "url" field.
 
 Here are today's articles:
 
