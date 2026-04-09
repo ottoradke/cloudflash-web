@@ -240,6 +240,14 @@
       min-height: 1em;
     }
 
+    .log-card-limit {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
     .logs-loading { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 
     @media (max-width: 600px) {
@@ -313,21 +321,25 @@
             <div class="log-card-service">Tavily</div>
             <div class="log-card-count" id="count-tavily">—</div>
             <div class="log-card-failures" id="failures-tavily"></div>
+            <div class="log-card-limit">1,000 / month</div>
           </div>
           <div class="log-card" id="card-anthropic">
             <div class="log-card-service">Anthropic</div>
             <div class="log-card-count" id="count-anthropic">—</div>
             <div class="log-card-failures" id="failures-anthropic"></div>
+            <div class="log-card-limit">Pay-as-you-go · No cap</div>
           </div>
           <div class="log-card" id="card-finnhub">
             <div class="log-card-service">Finnhub</div>
             <div class="log-card-count" id="count-finnhub">—</div>
             <div class="log-card-failures" id="failures-finnhub"></div>
+            <div class="log-card-limit">Limit unpublished</div>
           </div>
           <div class="log-card" id="card-resend">
             <div class="log-card-service">Resend</div>
             <div class="log-card-count" id="count-resend">—</div>
             <div class="log-card-failures" id="failures-resend"></div>
+            <div class="log-card-limit">50,000 / month</div>
           </div>
         </div>
       </div>
