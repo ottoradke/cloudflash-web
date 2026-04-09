@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Preview — The Daily Fintech Briefing</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #2179c8;
+      --border: rgba(255,255,255,0.18);
+      --text:   #ffffff;
+      --muted:  rgba(255,255,255,0.62);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .page {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-blink { animation: blink 1.8s step-end infinite; }
+    .logo-sep { color: var(--border); font-weight: 300; margin: 0 2px; }
+    .logo-product { font-weight: 400; color: var(--muted); }
+
+    .back-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    main { padding: 40px 0 60px; flex: 1; }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 32px;
+    }
+
+    .key-row {
+      display: flex;
+      gap: 10px;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .key-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+
+    .key-row input::placeholder { color: rgba(255,255,255,0.4); }
+    .key-row input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.16); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn-mock {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+    }
+    .btn-mock:hover { background: #fff; }
+
+    .btn-live {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      cursor: not-allowed;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      margin-bottom: 24px;
+    }
+
+    .status.error { color: #ffaaaa; }
+
+    .preview-wrap {
+      background: #f0f0f0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+      display: none;
+    }
+
+    #preview-frame {
+      width: 100%;
+      border: none;
+      display: block;
+      min-height: 400px;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 28px 40px 36px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+    <header>
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(7,8)">
+            <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
+            <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        Cloudflash
+        <span class="logo-sep">/</span>
+        <span class="logo-product">Admin Preview</span>
+      </div>
+      <a href="/fintech" class="back-link">← fintech</a>
+    </header>
+
+    <main>
+      <p class="eyebrow">Internal tool</p>
+      <h1>Email preview</h1>
+
+      <div class="key-row">
+        <input type="password" id="key-input" placeholder="Preview key" autocomplete="off" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-mock" id="btn-mock">Mock preview</button>
+        <button class="btn-live" disabled title="Live preview coming soon">Live preview</button>
+      </div>
+
+      <p class="status" id="status"></p>
+
+      <div class="preview-wrap" id="preview-wrap">
+        <iframe id="preview-frame" title="Email preview" sandbox="allow-same-origin"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <span>© 2026 Cloudflash, Inc.</span>
+    <span>Internal use only</span>
+  </footer>
+
+  <script>
+    const keyInput = document.getElementById('key-input');
+    const btnMock  = document.getElementById('btn-mock');
+    const status   = document.getElementById('status');
+    const wrap     = document.getElementById('preview-wrap');
+    const frame    = document.getElementById('preview-frame');
+
+    // Restore saved key
+    const saved = localStorage.getItem('preview_key');
+    if (saved) keyInput.value = saved;
+
+    btnMock.addEventListener('click', async () => {
+      const key = keyInput.value.trim();
+      if (!key) { status.textContent = 'Enter your preview key first.'; status.className = 'status error'; return; }
+
+      localStorage.setItem('preview_key', key);
+      status.textContent = 'Loading mock preview…';
+      status.className = 'status';
+      btnMock.disabled = true;
+      wrap.style.display = 'none';
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/preview?key=${encodeURIComponent(key)}&mock=true`);
+        if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
+        if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
+
+        const html = await res.text();
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(html); doc.close();
+
+        wrap.style.display = 'block';
+        status.textContent = '';
+
+        setTimeout(() => {
+          frame.style.height = doc.documentElement.scrollHeight + 'px';
+        }, 100);
+      } catch {
+        status.textContent = 'Request failed. Check your connection.';
+        status.className = 'status error';
+      } finally {
+        btnMock.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>

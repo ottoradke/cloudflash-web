@@ -8,6 +8,7 @@ export interface Env {
   FINNHUB_API_KEY: string;
   VERCEL_DEPLOY_HOOK: string;
   ALERT_EMAIL: string;
+  PREVIEW_KEY: string;
 }
 
 const TICKERS = ["ALKT", "VYX", "QTWO", "FIS", "FI", "JKHY", "ACIW", "GDOT", "MQ", "NCNO", "UPST"];
@@ -461,6 +462,85 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   console.log("Pipeline complete");
 }
 
+// --- Preview mock data ---
+
+const MOCK_STORIES: Story[] = [
+  {
+    headline: "FIS Bets Big on AI-Powered Core Modernization",
+    body: "FIS announced a sweeping initiative to embed generative AI across its core banking platform, targeting mid-size banks that have been slowest to modernize. The move follows a year of margin pressure and a strategic review that concluded 'AI or attrition' was the only viable path. Analysts are cautiously optimistic — cautiously being the operative word.",
+    cite: "American Banker",
+    url: "https://www.americanbanker.com",
+  },
+  {
+    headline: "Q2 Holdings Acquires Middleware Startup, Promises 'Seamless Integration'",
+    body: "Q2 Holdings picked up a Midwest-based middleware firm for an undisclosed sum, expanding its integration layer for community bank clients. The acquisition gives Q2 a foothold in real-time payment routing that it previously lacked. 'Seamless integration' remains the most optimistic phrase in banking technology.",
+    cite: "Finextra",
+    url: "https://www.finextra.com",
+  },
+  {
+    headline: "Upstart Revises Guidance Upward as AI Loan Models Stabilize",
+    body: "Upstart raised its full-year revenue guidance after reporting that its AI underwriting models have finally settled into a more predictable default curve. The company weathered two years of model recalibration that cost it dearly with bank partners. Stability, in fintech lending, is its own kind of headline.",
+    cite: "Reuters",
+    url: "https://www.reuters.com",
+  },
+  {
+    headline: "Jack Henry Rolls Out FedNow Onboarding for 200 Credit Unions",
+    body: "Jack Henry & Associates completed FedNow onboarding for 200 credit union clients in Q1, ahead of its internal timeline. The company cited a streamlined API layer and a surprisingly cooperative core migration process. Credit unions, historically the last to adopt anything, appear to have gotten the memo.",
+    cite: "PYMNTS",
+    url: "https://www.pymnts.com",
+  },
+  {
+    headline: "Marqeta Expands into BNPL Infrastructure for Regional Banks",
+    body: "Marqeta launched a white-label BNPL infrastructure product aimed squarely at regional banks that want to compete with Affirm without building anything themselves. The offering includes underwriting logic, ledger management, and a compliance wrapper. Regional banks remain the most enthusiastic buyers of things other people built.",
+    cite: "Bloomberg",
+    url: "https://www.bloomberg.com",
+  },
+  {
+    headline: "Temenos Faces Pressure as European Core Banking RFPs Accelerate",
+    body: "A wave of European bank RFPs for core modernization is creating both opportunity and anxiety for Temenos, which is competing against Thought Machine and Mambu on several large deals. The company's sales cycle has lengthened, and at least two prospects have paused decisions pending regulatory clarity on cloud residency. Nothing slows a bank like a pending regulatory clarification.",
+    cite: "Finextra",
+    url: "https://www.finextra.com",
+  },
+  {
+    headline: "Alloy Raises $50M to Expand Identity Decisioning Platform",
+    body: "Alloy closed a $50 million Series C to accelerate product development and expand its sales team targeting mid-market fintechs. The identity decisioning platform now processes over 100 million decisions monthly across 500 clients. Fraud, it turns out, is a growth market.",
+    cite: "PYMNTS",
+    url: "https://www.pymnts.com",
+  },
+  {
+    headline: "nCino Deepens Mortgage Automation Push with New Workflow Engine",
+    body: "nCino released an updated mortgage workflow engine that reduces manual touchpoints in the origination process by an estimated 40%. Early adopters report faster closing times and fewer compliance exceptions. The mortgage industry's relationship with automation is long, complicated, and slowly improving.",
+    cite: "American Banker",
+    url: "https://www.americanbanker.com",
+  },
+  {
+    headline: "ACI Worldwide Lands ISO 20022 Migration Deal with Tier-1 Bank",
+    body: "ACI Worldwide signed a multi-year agreement with a Tier-1 bank to manage its ISO 20022 migration across wholesale payment rails. The deal is one of ACI's largest in three years and validates its bet on payments modernization as a sustained revenue driver. ISO 20022 migration: the project that is always happening and never quite done.",
+    cite: "Reuters",
+    url: "https://www.reuters.com",
+  },
+  {
+    headline: "OCC Signals Tighter Oversight of Bank-Fintech Partnership Agreements",
+    body: "The OCC issued guidance signaling closer scrutiny of bank-fintech partnership agreements, particularly those involving deposit-taking and credit origination. The move follows a series of BaaS enforcement actions and puts pressure on sponsor banks to revisit their due diligence frameworks. Regulators remain the fintech industry's most reliable product managers.",
+    cite: "American Banker",
+    url: "https://www.americanbanker.com",
+  },
+];
+
+const MOCK_TICKERS: TickerData[] = [
+  { symbol: "ALKT", price: 28.42, change: 0.54, changePercent: 1.94 },
+  { symbol: "VYX",  price: 11.87, change: -0.23, changePercent: -1.90 },
+  { symbol: "QTWO", price: 74.15, change: 1.02, changePercent: 1.39 },
+  { symbol: "FIS",  price: 81.33, change: -0.67, changePercent: -0.82 },
+  { symbol: "FI",   price: 176.50, change: 2.14, changePercent: 1.23 },
+  { symbol: "JKHY", price: 162.88, change: 0.31, changePercent: 0.19 },
+  { symbol: "ACIW", price: 34.77, change: -0.44, changePercent: -1.25 },
+  { symbol: "GDOT", price: 9.12, change: 0.08, changePercent: 0.89 },
+  { symbol: "MQ",   price: 5.63, change: -0.11, changePercent: -1.92 },
+  { symbol: "NCNO", price: 24.91, change: 0.37, changePercent: 1.51 },
+  { symbol: "UPST", price: 43.28, change: 1.85, changePercent: 4.47 },
+];
+
 // --- Error alerting ---
 
 async function sendAlert(env: Env, error: unknown): Promise<void> {
@@ -632,6 +712,21 @@ export default {
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
       return jsonResponse(issue);
+    }
+
+    if (url.pathname === "/preview" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      const now = new Date();
+      const date = now.toLocaleDateString("en-US", {
+        weekday: "long", month: "long", day: "numeric", year: "numeric",
+      });
+
+      const html = buildEmailHtml(MOCK_STORIES, MOCK_TICKERS, date);
+      return new Response(html, { headers: { "Content-Type": "text/html" } });
     }
 
     return new Response("Not Found", { status: 404 });
