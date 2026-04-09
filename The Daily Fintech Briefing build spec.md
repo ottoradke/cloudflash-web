@@ -330,11 +330,9 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 | Secret | Description |
 |--------|-------------|
 | `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
-| `RESEND_API_KEY` | Resend API key — rotate before use (see note below) |
+| `RESEND_API_KEY` | Resend API key |
 | `VERCEL_DEPLOY_HOOK` | Vercel Deploy Hook URL to trigger archive rebuilds |
 | `CLOUDFLARE_API_TOKEN` | Stored in GitHub repository secrets for CI deployment |
-
-> **⚠️ Important:** The Resend API key was accidentally shared in a chat session on April 7, 2026. It must be rotated before use. Generate a new key in the Resend dashboard and use that one.
 
 ---
 
@@ -342,7 +340,6 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 
 ### 9.1 Immediate
 
-- Rotate Resend API key (see note in section 8)
 - Add Vercel Deploy Hook URL as a Cloudflare Worker secret to trigger archive rebuilds
 - Verify `cloudflash.com` domain in Resend (SPF, DKIM, DMARC)
 - Confirm Yahoo Finance batch endpoint still active (unofficial — monitor for breakage)
