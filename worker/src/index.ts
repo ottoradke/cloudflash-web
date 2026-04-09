@@ -579,6 +579,26 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/issues" && request.method === "GET") {
+      const issues = await env.DB
+        .prepare("SELECT id, date, subject FROM issues ORDER BY date DESC")
+        .all<{ id: number; date: string; subject: string }>();
+      return jsonResponse(issues.results);
+    }
+
+    if (url.pathname.startsWith("/api/issues/") && request.method === "GET") {
+      const date = url.pathname.replace("/api/issues/", "");
+      const issue = await env.DB
+        .prepare("SELECT id, date, subject, html_body FROM issues WHERE date = ?")
+        .bind(date)
+        .first<{ id: number; date: string; subject: string; html_body: string }>();
+      if (!issue) return new Response(JSON.stringify({ error: "Not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
+      return jsonResponse(issue);
+    }
+
     return new Response("Not Found", { status: 404 });
   },
 };

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Daily Fintech Briefing</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script defer src="/_vercel/insights/script.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #2179c8;
+      --bg-dark: #1560aa;
+      --border:  rgba(255,255,255,0.18);
+      --text:    #ffffff;
+      --muted:   rgba(255,255,255,0.62);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.1s;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-blink { animation: blink 1.8s step-end infinite; }
+
+    .logo-sep { color: var(--border); font-weight: 300; margin: 0 2px; }
+    .logo-product { font-weight: 400; color: var(--muted); }
+
+    .back-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 400;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    main {
+      padding: 48px 0 80px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.3s;
+      flex: 1;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    /* Issue iframe wrapper */
+    .issue-frame-wrap {
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+    }
+
+    #issue-frame {
+      width: 100%;
+      border: none;
+      display: block;
+      min-height: 400px;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 40px 36px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.5s;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 0 24px; }
+      footer { padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <header>
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloudflash logo">
+          <g transform="translate(7,8)">
+            <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
+            <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        Cloudflash
+        <span class="logo-sep">/</span>
+        <span class="logo-product">The Daily Fintech Briefing</span>
+      </div>
+      <a href="/fintech/archive" class="back-link" id="back-link">← Archive</a>
+    </header>
+
+    <main id="main">
+      <p class="status" id="status">Loading...</p>
+    </main>
+
+  </div>
+
+  <footer>
+    <span>© 2026 Cloudflash, Inc. · Est. 2000</span>
+    <a href="/fintech" style="color:var(--muted);text-decoration:none">cloudflash.com/fintech</a>
+  </footer>
+
+  <script>
+    (function () {
+      const main = document.getElementById('main');
+      const status = document.getElementById('status');
+      const params = new URLSearchParams(window.location.search);
+      const date = params.get('date');
+
+      if (!date) {
+        status.textContent = 'No issue specified.';
+        return;
+      }
+
+      fetch('https://api.cloudflash.com/api/issues/' + date)
+        .then(r => {
+          if (!r.ok) throw new Error('not found');
+          return r.json();
+        })
+        .then(issue => {
+          document.title = issue.subject + ' — Cloudflash';
+
+          status.remove();
+
+          const wrap = document.createElement('div');
+          wrap.className = 'issue-frame-wrap';
+
+          const iframe = document.createElement('iframe');
+          iframe.id = 'issue-frame';
+          iframe.title = issue.subject;
+          iframe.setAttribute('sandbox', 'allow-same-origin');
+
+          wrap.appendChild(iframe);
+          main.appendChild(wrap);
+
+          // Write HTML into iframe then auto-size it
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          doc.open();
+          doc.write(issue.html_body);
+          doc.close();
+
+          function resize() {
+            iframe.style.height = doc.documentElement.scrollHeight + 'px';
+          }
+
+          iframe.addEventListener('load', resize);
+          setTimeout(resize, 100);
+        })
+        .catch(() => {
+          status.textContent = 'Issue not found.';
+        });
+    })();
+  </script>
+
+</body>
+</html>

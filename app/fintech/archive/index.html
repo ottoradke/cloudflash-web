@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Archive — The Daily Fintech Briefing</title>
+  <meta name="description" content="All past issues of The Daily Fintech Briefing.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script defer src="/_vercel/insights/script.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #2179c8;
+      --bg-dark: #1560aa;
+      --border:  rgba(255,255,255,0.18);
+      --text:    #ffffff;
+      --muted:   rgba(255,255,255,0.62);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.1s;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-blink { animation: blink 1.8s step-end infinite; }
+
+    .logo-sep { color: var(--border); font-weight: 300; margin: 0 2px; }
+    .logo-product { font-weight: 400; color: var(--muted); }
+
+    .back-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 400;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    main {
+      padding: 56px 0 80px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.3s;
+      flex: 1;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 48px;
+    }
+
+    .issue-list {
+      list-style: none;
+      border-top: 1px solid var(--border);
+    }
+
+    .issue-list li {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .issue-list a {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 0;
+      text-decoration: none;
+      color: var(--text);
+      transition: color 0.15s;
+    }
+
+    .issue-list a:hover { color: rgba(255,255,255,0.85); }
+    .issue-list a:hover .issue-subject { text-decoration: underline; }
+
+    .issue-subject {
+      font-size: 0.92rem;
+      font-weight: 400;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .issue-date {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .empty {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    .loading {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 40px 36px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.5s;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 0 24px; }
+      footer { padding-left: 24px; padding-right: 24px; flex-direction: column; gap: 8px; text-align: center; }
+      .issue-subject { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <header>
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloudflash logo">
+          <g transform="translate(7,8)">
+            <polygon points="6,0 0,10 4,10 1,17 10,6 5,6" fill="rgba(255,255,255,0.95)"/>
+            <rect class="cursor-blink" x="11" y="14" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,0.95)"/>
+          </g>
+        </svg>
+        Cloudflash
+        <span class="logo-sep">/</span>
+        <span class="logo-product">The Daily Fintech Briefing</span>
+      </div>
+      <a href="/fintech" class="back-link">← Subscribe</a>
+    </header>
+
+    <main>
+      <p class="eyebrow">Past issues</p>
+      <h1>Archive</h1>
+      <ul class="issue-list" id="issue-list">
+        <li class="loading" id="loading">Loading...</li>
+      </ul>
+    </main>
+
+  </div>
+
+  <footer>
+    <span>© 2026 Cloudflash, Inc. · Est. 2000</span>
+    <a href="/fintech" style="color:var(--muted);text-decoration:none">cloudflash.com/fintech</a>
+  </footer>
+
+  <script>
+    (function () {
+      const list = document.getElementById('issue-list');
+      const loading = document.getElementById('loading');
+
+      function formatDate(dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+          weekday: 'short', month: 'long', day: 'numeric', year: 'numeric'
+        });
+      }
+
+      fetch('https://api.cloudflash.com/api/issues')
+        .then(r => r.json())
+        .then(issues => {
+          loading.remove();
+          if (!issues.length) {
+            list.innerHTML = '<li class="empty">No issues yet.</li>';
+            return;
+          }
+          issues.forEach(issue => {
+            const li = document.createElement('li');
+            li.innerHTML = `<a href="/fintech/issue?date=${issue.date}">
+              <span class="issue-subject">${issue.subject}</span>
+              <span class="issue-date">${formatDate(issue.date)}</span>
+            </a>`;
+            list.appendChild(li);
+          });
+        })
+        .catch(() => {
+          loading.textContent = 'Failed to load issues. Please try again.';
+        });
+    })();
+  </script>
+
+</body>
+</html>
