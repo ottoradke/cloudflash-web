@@ -770,6 +770,7 @@ export default {
       }
     }
 
+
     if (url.pathname === "/api/logs" && request.method === "GET") {
       const periods = [1, 7, 14, 21, 28];
       const services = ["tavily", "anthropic", "finnhub", "resend"];
