@@ -86,14 +86,14 @@
       margin-bottom: 32px;
     }
 
-    .key-row {
+    .key-row, .send-row {
       display: flex;
       gap: 10px;
       max-width: 480px;
       margin-bottom: 32px;
     }
 
-    .key-row input {
+    .key-row input, .send-row input {
       flex: 1;
       background: rgba(255,255,255,0.12);
       border: 1px solid var(--border);
@@ -105,8 +105,8 @@
       outline: none;
     }
 
-    .key-row input::placeholder { color: rgba(255,255,255,0.4); }
-    .key-row input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.16); }
+    .key-row input::placeholder, .send-row input::placeholder { color: rgba(255,255,255,0.4); }
+    .key-row input:focus, .send-row input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.16); }
 
     .btn-row {
       display: flex;
@@ -309,6 +309,12 @@
 
       <p class="status" id="status"></p>
 
+      <div class="send-row" id="send-row" style="display:none; gap:10px; max-width:480px; margin-bottom:24px;">
+        <input type="email" id="send-email" placeholder="Send preview to…" autocomplete="off" />
+        <button class="btn-mock" id="btn-send">Send</button>
+      </div>
+      <p class="status" id="send-status"></p>
+
       <div class="preview-wrap" id="preview-wrap">
         <iframe id="preview-frame" title="Email preview" sandbox="allow-same-origin"></iframe>
       </div>
@@ -361,13 +367,18 @@
   </footer>
 
   <script>
-    const keyInput = document.getElementById('key-input');
-    const btnMock  = document.getElementById('btn-mock');
-    const btnFetch = document.getElementById('btn-fetch');
-    const btnLive  = document.getElementById('btn-live');
-    const status   = document.getElementById('status');
-    const wrap     = document.getElementById('preview-wrap');
-    const frame    = document.getElementById('preview-frame');
+    const keyInput   = document.getElementById('key-input');
+    const btnMock    = document.getElementById('btn-mock');
+    const btnFetch   = document.getElementById('btn-fetch');
+    const btnLive    = document.getElementById('btn-live');
+    const btnSend    = document.getElementById('btn-send');
+    const sendEmail  = document.getElementById('send-email');
+    const sendRow    = document.getElementById('send-row');
+    const sendStatus = document.getElementById('send-status');
+    const status     = document.getElementById('status');
+    const wrap       = document.getElementById('preview-wrap');
+    const frame      = document.getElementById('preview-frame');
+    let currentPreviewId = null;
 
     // Restore saved key
     const saved = localStorage.getItem('preview_key');
@@ -384,12 +395,21 @@
       btnFetch.disabled = true;
       btnLive.disabled = true;
       wrap.style.display = 'none';
+      sendRow.style.display = 'none';
+      sendStatus.textContent = '';
+      currentPreviewId = null;
 
       try {
         const res = await fetch(`https://api.cloudflash.com/${endpoint}?key=${encodeURIComponent(key)}`);
         if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
         if (res.status === 404) { status.textContent = 'No pipeline run found. Run the pipeline first.'; status.className = 'status error'; return; }
         if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
+
+        const previewId = res.headers.get('X-Preview-ID');
+        if (previewId) {
+          currentPreviewId = previewId;
+          sendRow.style.display = 'flex';
+        }
 
         const html = await res.text();
         const doc = frame.contentDocument || frame.contentWindow.document;
@@ -410,6 +430,30 @@
         btnLive.disabled = false;
       }
     }
+
+    btnSend.addEventListener('click', async () => {
+      const key = keyInput.value.trim();
+      const to  = sendEmail.value.trim();
+      if (!to) { sendStatus.textContent = 'Enter an email address.'; sendStatus.className = 'status error'; return; }
+      if (!currentPreviewId) { sendStatus.textContent = 'No preview loaded.'; sendStatus.className = 'status error'; return; }
+
+      btnSend.disabled = true;
+      sendStatus.textContent = 'Sending…';
+      sendStatus.className = 'status';
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/preview/send?key=${encodeURIComponent(key)}&id=${currentPreviewId}&to=${encodeURIComponent(to)}`);
+        if (res.status === 401) { sendStatus.textContent = 'Invalid key.'; sendStatus.className = 'status error'; return; }
+        if (!res.ok) { sendStatus.textContent = 'Send failed. Try again.'; sendStatus.className = 'status error'; return; }
+        sendStatus.textContent = `Sent to ${to}.`;
+        sendStatus.className = 'status';
+      } catch {
+        sendStatus.textContent = 'Request failed. Check your connection.';
+        sendStatus.className = 'status error';
+      } finally {
+        btnSend.disabled = false;
+      }
+    });
 
     btnFetch.addEventListener('click', async () => {
       const key = keyInput.value.trim();

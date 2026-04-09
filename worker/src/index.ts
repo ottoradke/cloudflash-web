@@ -250,6 +250,16 @@ async function saveIssue(db: D1Database, date: string, subject: string, html: st
   return result!.id;
 }
 
+// --- Preview storage ---
+
+async function savePreview(db: D1Database, date: string, html: string): Promise<number> {
+  const result = await db
+    .prepare("INSERT INTO previews (date, html) VALUES (?, ?) RETURNING id")
+    .bind(date, html)
+    .first<{ id: number }>();
+  return result!.id;
+}
+
 // --- Pipeline run caching ---
 
 async function savePipelineRun(db: D1Database, date: string, articles: TavilyResult[]): Promise<number> {
@@ -877,12 +887,62 @@ export default {
       const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
       const html = buildEmailHtml(stories, tickers, date);
 
+      const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+      const previewId = await savePreview(env.DB, dateISO, html);
+
       return new Response(html, {
         headers: {
           "Content-Type": "text/html",
           "Access-Control-Allow-Origin": "*",
+          "Access-Control-Expose-Headers": "X-Preview-ID",
+          "X-Preview-ID": String(previewId),
         },
       });
+    }
+
+    if (url.pathname === "/preview/send" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", {
+          status: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        });
+      }
+
+      const id = url.searchParams.get("id");
+      const to = url.searchParams.get("to");
+      if (!id || !to) {
+        return jsonResponse({ error: "Missing id or to" }, 400);
+      }
+
+      const preview = await env.DB
+        .prepare("SELECT date, html FROM previews WHERE id = ?")
+        .bind(Number(id))
+        .first<{ date: string; html: string }>();
+
+      if (!preview) {
+        return jsonResponse({ error: "Preview not found" }, 404);
+      }
+
+      const subject = `The Daily Fintech Briefing · Preview · ${preview.date}`;
+      const html = preview.html.replace("{{UNSUBSCRIBE_TOKEN}}", "preview");
+
+      const resendStart = Date.now();
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.RESEND_API_KEY}` },
+        body: JSON.stringify({ from: "Fintech Briefing <briefing@cloudflash.com>", to: [to], subject, html }),
+      });
+      const resendDuration = Date.now() - resendStart;
+
+      if (!res.ok) {
+        const errText = await res.text();
+        await logApi(env.DB, "resend", false, { duration_ms: resendDuration, error_message: `${res.status} ${errText}` });
+        return jsonResponse({ error: `Resend error: ${res.status}` }, 500);
+      }
+
+      await logApi(env.DB, "resend", true, { duration_ms: resendDuration });
+      return jsonResponse({ status: "sent", to });
     }
 
     return new Response("Not Found", { status: 404 });
