@@ -131,6 +131,13 @@
     }
     .btn-mock:hover { background: #fff; }
 
+    .btn-fetch {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85);
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+    .btn-fetch:hover { background: rgba(255,255,255,0.22); }
+
     .btn-live {
       background: rgba(255,255,255,0.15);
       color: rgba(255,255,255,0.85);
@@ -295,6 +302,7 @@
 
       <div class="btn-row">
         <button class="btn-mock" id="btn-mock">Mock preview</button>
+        <button class="btn-fetch" id="btn-fetch">Fetch articles</button>
         <button class="btn-live" id="btn-live">Live preview</button>
       </div>
 
@@ -354,6 +362,7 @@
   <script>
     const keyInput = document.getElementById('key-input');
     const btnMock  = document.getElementById('btn-mock');
+    const btnFetch = document.getElementById('btn-fetch');
     const btnLive  = document.getElementById('btn-live');
     const status   = document.getElementById('status');
     const wrap     = document.getElementById('preview-wrap');
@@ -371,6 +380,7 @@
       status.textContent = endpoint === 'preview' ? 'Loading mock preview…' : 'Loading live preview — this may take 20–30 seconds…';
       status.className = 'status';
       btnMock.disabled = true;
+      btnFetch.disabled = true;
       btnLive.disabled = true;
       wrap.style.display = 'none';
 
@@ -395,9 +405,37 @@
         status.className = 'status error';
       } finally {
         btnMock.disabled = false;
+        btnFetch.disabled = false;
         btnLive.disabled = false;
       }
     }
+
+    btnFetch.addEventListener('click', async () => {
+      const key = keyInput.value.trim();
+      if (!key) { status.textContent = 'Enter your preview key first.'; status.className = 'status error'; return; }
+
+      localStorage.setItem('preview_key', key);
+      status.textContent = 'Fetching articles from Tavily — this may take 15–20 seconds…';
+      status.className = 'status';
+      btnMock.disabled = true;
+      btnFetch.disabled = true;
+      btnLive.disabled = true;
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/pipeline/fetch?key=${encodeURIComponent(key)}`);
+        if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
+        if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
+        const data = await res.json();
+        status.textContent = `Fetched ${data.articles} articles for ${data.date}. Ready for live preview.`;
+      } catch {
+        status.textContent = 'Request failed. Check your connection.';
+        status.className = 'status error';
+      } finally {
+        btnMock.disabled = false;
+        btnFetch.disabled = false;
+        btnLive.disabled = false;
+      }
+    });
 
     btnMock.addEventListener('click', () => loadPreview('preview'));
     btnLive.addEventListener('click', () => loadPreview('preview/live'));

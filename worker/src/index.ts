@@ -805,6 +805,24 @@ export default {
       return jsonResponse(issue);
     }
 
+    if (url.pathname === "/pipeline/fetch" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", {
+          status: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        });
+      }
+
+      const now = new Date();
+      const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+
+      const articles = await fetchAllNews(env.TAVILY_API_KEY, env.DB);
+      await savePipelineRun(env.DB, dateISO, articles);
+
+      return jsonResponse({ status: "ok", articles: articles.length, date: dateISO });
+    }
+
     if (url.pathname === "/preview" && request.method === "GET") {
       const key = url.searchParams.get("key");
       if (!key || key !== env.PREVIEW_KEY) {
