@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/confirm", "destination": "https://api.cloudflash.com/confirm?:query" },
+    { "source": "/unsubscribe", "destination": "https://api.cloudflash.com/unsubscribe?:query" }
+  ]
+}
