@@ -163,41 +163,88 @@
     }
 
     .logs-section { margin-top: 56px; }
-    .logs-section h2 {
+
+    .logs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .logs-header h2 {
       font-size: 1rem;
       font-weight: 500;
-      margin-bottom: 20px;
     }
 
-    .logs-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
+    .period-tabs {
+      display: flex;
+      gap: 6px;
     }
 
-    .logs-table th {
-      text-align: left;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0 16px 10px 0;
+    .period-tab {
+      font-size: 0.72rem;
       font-weight: 500;
-      border-bottom: 1px solid var(--border);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
-    .logs-table th:not(:first-child) { text-align: right; }
-
-    .logs-table td {
-      padding: 10px 16px 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      vertical-align: middle;
+    .period-tab:hover { color: var(--text); border-color: rgba(255,255,255,0.35); }
+    .period-tab.active {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+      border-color: transparent;
     }
 
-    .logs-table td:not(:first-child) { text-align: right; color: var(--muted); }
-    .logs-table td:first-child { font-weight: 500; text-transform: capitalize; }
-    .logs-table .has-failures { color: #ffaaaa; }
+    .logs-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .log-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px 18px;
+    }
+
+    .log-card-service {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .log-card-count {
+      font-size: 1.8rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .log-card-failures {
+      font-size: 0.75rem;
+      color: #ffaaaa;
+      min-height: 1em;
+    }
+
     .logs-loading { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+
+    @media (max-width: 600px) {
+      .logs-cards { grid-template-columns: repeat(2, 1fr); }
+    }
 
     footer {
       display: flex;
@@ -250,21 +297,39 @@
       </div>
 
       <div class="logs-section">
-        <h2>API usage</h2>
+        <div class="logs-header">
+          <h2>API usage</h2>
+          <div class="period-tabs" id="period-tabs">
+            <button class="period-tab active" data-period="1d">1 day</button>
+            <button class="period-tab" data-period="7d">7 days</button>
+            <button class="period-tab" data-period="14d">14 days</button>
+            <button class="period-tab" data-period="21d">21 days</button>
+            <button class="period-tab" data-period="28d">28 days</button>
+          </div>
+        </div>
         <p class="logs-loading" id="logs-loading">Loading...</p>
-        <table class="logs-table" id="logs-table" style="display:none">
-          <thead>
-            <tr>
-              <th>Service</th>
-              <th>1 day</th>
-              <th>7 days</th>
-              <th>14 days</th>
-              <th>21 days</th>
-              <th>28 days</th>
-            </tr>
-          </thead>
-          <tbody id="logs-body"></tbody>
-        </table>
+        <div class="logs-cards" id="logs-cards" style="display:none">
+          <div class="log-card" id="card-tavily">
+            <div class="log-card-service">Tavily</div>
+            <div class="log-card-count" id="count-tavily">—</div>
+            <div class="log-card-failures" id="failures-tavily"></div>
+          </div>
+          <div class="log-card" id="card-anthropic">
+            <div class="log-card-service">Anthropic</div>
+            <div class="log-card-count" id="count-anthropic">—</div>
+            <div class="log-card-failures" id="failures-anthropic"></div>
+          </div>
+          <div class="log-card" id="card-finnhub">
+            <div class="log-card-service">Finnhub</div>
+            <div class="log-card-count" id="count-finnhub">—</div>
+            <div class="log-card-failures" id="failures-finnhub"></div>
+          </div>
+          <div class="log-card" id="card-resend">
+            <div class="log-card-service">Resend</div>
+            <div class="log-card-count" id="count-resend">—</div>
+            <div class="log-card-failures" id="failures-resend"></div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -321,29 +386,39 @@
 
   <script>
     (function () {
-      const loading = document.getElementById('logs-loading');
-      const table   = document.getElementById('logs-table');
-      const body    = document.getElementById('logs-body');
-      const periods = ['1d', '7d', '14d', '21d', '28d'];
+      const loading  = document.getElementById('logs-loading');
+      const cards    = document.getElementById('logs-cards');
+      const tabs     = document.querySelectorAll('.period-tab');
       const services = ['tavily', 'anthropic', 'finnhub', 'resend'];
+      let logData    = null;
+      let activePeriod = '1d';
+
+      function render(period) {
+        if (!logData) return;
+        services.forEach(service => {
+          const { calls, failures } = logData[service]?.[period] ?? { calls: 0, failures: 0 };
+          document.getElementById(`count-${service}`).textContent = calls.toLocaleString();
+          const failEl = document.getElementById(`failures-${service}`);
+          failEl.textContent = failures > 0 ? `${failures} failed` : '';
+        });
+      }
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          activePeriod = tab.dataset.period;
+          render(activePeriod);
+        });
+      });
 
       fetch('https://api.cloudflash.com/api/logs')
         .then(r => r.json())
         .then(data => {
+          logData = data;
           loading.remove();
-          services.forEach(service => {
-            const tr = document.createElement('tr');
-            let html = `<td>${service}</td>`;
-            periods.forEach(p => {
-              const { calls, failures } = data[service]?.[p] ?? { calls: 0, failures: 0 };
-              const cls = failures > 0 ? ' class="has-failures"' : '';
-              const label = failures > 0 ? `${calls} <span style="font-size:0.72rem">(${failures} failed)</span>` : calls;
-              html += `<td${cls}>${label}</td>`;
-            });
-            tr.innerHTML = html;
-            body.appendChild(tr);
-          });
-          table.style.display = 'table';
+          cards.style.display = 'grid';
+          render(activePeriod);
         })
         .catch(() => {
           loading.textContent = 'Failed to load usage data.';
