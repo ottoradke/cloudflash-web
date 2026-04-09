@@ -714,17 +714,21 @@ export default {
       const html = issue.html_body.replace("{{UNSUBSCRIBE_TOKEN}}", sub.unsubscribe_token);
 
       try {
+        const resendStart = Date.now();
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.RESEND_API_KEY}` },
           body: JSON.stringify({ from: "Fintech Briefing <briefing@cloudflash.com>", to: [email], subject: issue.subject, html }),
         });
+        const resendDuration = Date.now() - resendStart;
 
         if (!res.ok) {
-          const err = await res.text();
-          return new Response(JSON.stringify({ error: `Resend error: ${err}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+          const errText = await res.text();
+          await logApi(env.DB, "resend", false, { duration_ms: resendDuration, error_message: `${res.status} ${errText}` });
+          return new Response(JSON.stringify({ error: `Resend error: ${errText}` }), { status: 500, headers: { "Content-Type": "application/json" } });
         }
 
+        await logApi(env.DB, "resend", true, { duration_ms: resendDuration });
         return new Response(JSON.stringify({ status: "sent", to: email }), { headers: { "Content-Type": "application/json" } });
       } catch (err) {
         return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
