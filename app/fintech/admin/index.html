@@ -133,10 +133,10 @@
 
     .btn-live {
       background: rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.5);
-      cursor: not-allowed;
-      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.85);
+      border: 1px solid rgba(255,255,255,0.35);
     }
+    .btn-live:hover { background: rgba(255,255,255,0.22); }
 
     .status {
       font-size: 0.82rem;
@@ -295,7 +295,7 @@
 
       <div class="btn-row">
         <button class="btn-mock" id="btn-mock">Mock preview</button>
-        <button class="btn-live" disabled title="Live preview coming soon">Live preview</button>
+        <button class="btn-live" id="btn-live">Live preview</button>
       </div>
 
       <p class="status" id="status"></p>
@@ -354,6 +354,7 @@
   <script>
     const keyInput = document.getElementById('key-input');
     const btnMock  = document.getElementById('btn-mock');
+    const btnLive  = document.getElementById('btn-live');
     const status   = document.getElementById('status');
     const wrap     = document.getElementById('preview-wrap');
     const frame    = document.getElementById('preview-frame');
@@ -362,19 +363,21 @@
     const saved = localStorage.getItem('preview_key');
     if (saved) keyInput.value = saved;
 
-    btnMock.addEventListener('click', async () => {
+    async function loadPreview(endpoint) {
       const key = keyInput.value.trim();
       if (!key) { status.textContent = 'Enter your preview key first.'; status.className = 'status error'; return; }
 
       localStorage.setItem('preview_key', key);
-      status.textContent = 'Loading mock preview…';
+      status.textContent = endpoint === 'preview' ? 'Loading mock preview…' : 'Loading live preview — this may take 20–30 seconds…';
       status.className = 'status';
       btnMock.disabled = true;
+      btnLive.disabled = true;
       wrap.style.display = 'none';
 
       try {
-        const res = await fetch(`https://api.cloudflash.com/preview?key=${encodeURIComponent(key)}&mock=true`);
+        const res = await fetch(`https://api.cloudflash.com/${endpoint}?key=${encodeURIComponent(key)}`);
         if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
+        if (res.status === 404) { status.textContent = 'No pipeline run found. Run the pipeline first.'; status.className = 'status error'; return; }
         if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
 
         const html = await res.text();
@@ -392,8 +395,12 @@
         status.className = 'status error';
       } finally {
         btnMock.disabled = false;
+        btnLive.disabled = false;
       }
-    });
+    }
+
+    btnMock.addEventListener('click', () => loadPreview('preview'));
+    btnLive.addEventListener('click', () => loadPreview('preview/live'));
   </script>
 
   <script>

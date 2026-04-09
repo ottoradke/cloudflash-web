@@ -250,6 +250,23 @@ async function saveIssue(db: D1Database, date: string, subject: string, html: st
   return result!.id;
 }
 
+// --- Pipeline run caching ---
+
+async function savePipelineRun(db: D1Database, date: string, articles: TavilyResult[]): Promise<number> {
+  const result = await db
+    .prepare("INSERT INTO pipeline_runs (date, articles_json) VALUES (?, ?) RETURNING id")
+    .bind(date, JSON.stringify(articles))
+    .first<{ id: number }>();
+  return result!.id;
+}
+
+async function updatePipelineRunStories(db: D1Database, id: number, stories: Story[]): Promise<void> {
+  await db
+    .prepare("UPDATE pipeline_runs SET stories_json = ? WHERE id = ?")
+    .bind(JSON.stringify(stories), id)
+    .run();
+}
+
 // --- Send via Resend ---
 
 async function sendBriefing(
@@ -449,9 +466,14 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
   console.log(tickers ? `Fetched ${tickers.length} tickers` : "Ticker fetch failed — omitting");
 
+  // Save articles before Claude call so we have them even if generation fails
+  const runId = await savePipelineRun(env.DB, dateISO, articles);
+
   console.log("Generating stories with Claude...");
   const stories = await generateStories(articles, env.ANTHROPIC_API_KEY, env.DB);
   console.log(`Generated ${stories.length} stories`);
+
+  await updatePipelineRunStories(env.DB, runId, stories);
 
   const subject = `The Daily Fintech Briefing · ${date}`;
   const html = buildEmailHtml(stories, tickers, date);
@@ -798,6 +820,45 @@ export default {
       });
 
       const html = buildEmailHtml(MOCK_STORIES, MOCK_TICKERS, date);
+      return new Response(html, {
+        headers: {
+          "Content-Type": "text/html",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    if (url.pathname === "/preview/live" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", {
+          status: 401,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        });
+      }
+
+      const run = await env.DB
+        .prepare("SELECT articles_json FROM pipeline_runs ORDER BY id DESC LIMIT 1")
+        .first<{ articles_json: string }>();
+
+      if (!run?.articles_json) {
+        return new Response("No pipeline run found. Run the pipeline at least once first.", {
+          status: 404,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        });
+      }
+
+      const articles = JSON.parse(run.articles_json) as TavilyResult[];
+      const stories = await generateStories(articles, env.ANTHROPIC_API_KEY, env.DB);
+
+      const now = new Date();
+      const date = now.toLocaleDateString("en-US", {
+        weekday: "long", month: "long", day: "numeric", year: "numeric",
+      });
+
+      const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
+      const html = buildEmailHtml(stories, tickers, date);
+
       return new Response(html, {
         headers: {
           "Content-Type": "text/html",

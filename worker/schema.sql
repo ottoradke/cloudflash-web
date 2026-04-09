@@ -14,9 +14,20 @@ CREATE TABLE IF NOT EXISTS subscribers (
   unsubscribe_token TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  articles_json TEXT,
+  stories_json TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS api_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   service TEXT NOT NULL,
   success INTEGER NOT NULL DEFAULT 1,
+  duration_ms INTEGER,
+  tokens_used INTEGER,
+  error_message TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
