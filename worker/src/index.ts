@@ -1,4 +1,4 @@
-import { buildEmailHtml, Story, TickerData } from "./email-template";
+import { buildEmailHtml, buildEmailText, Story, TickerData } from "./email-template";
 
 export interface Env {
   DB: D1Database;
@@ -284,10 +284,12 @@ async function sendBriefing(
   to: string[],
   subject: string,
   html: string,
+  text: string,
   unsubscribeToken: string,
   db: D1Database
 ): Promise<void> {
   const personalizedHtml = html.replace("{{UNSUBSCRIBE_TOKEN}}", unsubscribeToken);
+  const personalizedText = text.replace("{{UNSUBSCRIBE_TOKEN}}", unsubscribeToken);
 
   const resendStart = Date.now();
   const res = await fetch("https://api.resend.com/emails", {
@@ -298,9 +300,11 @@ async function sendBriefing(
     },
     body: JSON.stringify({
       from: "Fintech Briefing <briefing@cloudflash.com>",
+      reply_to: "hello@cloudflash.com",
       to,
       subject,
       html: personalizedHtml,
+      text: personalizedText,
       headers: {
         "List-Unsubscribe": `<https://cloudflash.com/unsubscribe?token=${unsubscribeToken}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -384,6 +388,7 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
     },
     body: JSON.stringify({
       from: "Fintech Briefing <briefing@cloudflash.com>",
+      reply_to: "hello@cloudflash.com",
       to: [email],
       subject: "Confirm your subscription to The Daily Fintech Briefing",
       html: confirmHtml,
@@ -419,7 +424,7 @@ async function handleConfirm(request: Request, url: URL, env: Env): Promise<Resp
 
   // POST: actually confirm
   const result = await env.DB
-    .prepare("UPDATE subscribers SET confirmed = 1 WHERE unsubscribe_token = ? AND confirmed = 0 RETURNING email")
+    .prepare("UPDATE subscribers SET confirmed = 1, confirmed_at = CURRENT_TIMESTAMP WHERE unsubscribe_token = ? AND confirmed = 0 RETURNING email")
     .bind(token)
     .first<{ email: string }>();
 
@@ -500,6 +505,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
 
   const subject = `The Daily Fintech Briefing · ${date}`;
   const html = buildEmailHtml(stories, tickers, date);
+  const text = buildEmailText(stories, tickers, date);
 
   console.log("Saving issue to D1...");
   await saveIssue(env.DB, dateISO, subject, html);
@@ -509,7 +515,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
     let sent = 0, failed = 0;
     for (const email of overrideTo) {
       try {
-        await sendBriefing(env.RESEND_API_KEY, [email], subject, html, "test", env.DB);
+        await sendBriefing(env.RESEND_API_KEY, [email], subject, html, text, "test", env.DB);
         console.log(`Sent: ${email}`);
         sent++;
       } catch (err) {
@@ -534,7 +540,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
       await Promise.all(
         batch.map(async (sub) => {
           try {
-            await sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, sub.unsubscribe_token, env.DB);
+            await sendBriefing(env.RESEND_API_KEY, [sub.email], subject, html, text, sub.unsubscribe_token, env.DB);
             console.log(`Sent: ${sub.email}`);
             sent++;
           } catch (err) {
@@ -812,6 +818,36 @@ export default {
         }
       }
       return jsonResponse(result);
+    }
+
+    if (url.pathname === "/webhooks/resend" && request.method === "POST") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      let payload: { type: string; data: { to: string[] } };
+      try {
+        payload = await request.json() as { type: string; data: { to: string[] } };
+      } catch {
+        return new Response("Bad request", { status: 400 });
+      }
+
+      const { type, data } = payload;
+      const email = data?.to?.[0];
+
+      if (!email) return new Response("OK", { status: 200 });
+
+      // Hard bounce or spam complaint — remove subscriber
+      if (type === "email.bounced" || type === "email.complained") {
+        await env.DB
+          .prepare("DELETE FROM subscribers WHERE email = ?")
+          .bind(email.toLowerCase())
+          .run();
+        console.log(`Webhook ${type}: removed ${email}`);
+      }
+
+      return new Response("OK", { status: 200 });
     }
 
     if (url.pathname === "/api/subscribers/count" && request.method === "GET") {

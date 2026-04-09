@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>The Daily Fintech Briefing</title>
+  <script>
+    (function() {
+      const date = new URLSearchParams(window.location.search).get('date');
+      if (date) {
+        const link = document.createElement('link');
+        link.rel = 'canonical';
+        link.href = 'https://cloudflash.com/fintech/issue?date=' + date;
+        document.currentScript.insertAdjacentElement('afterend', link);
+      }
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">

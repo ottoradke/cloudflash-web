@@ -66,6 +66,51 @@ function buildTickerTable(tickers: TickerData[], date: string): string {
   </table>`;
 }
 
+export function buildEmailText(
+  stories: Story[],
+  tickers: TickerData[] | null,
+  date: string
+): string {
+  const lines: string[] = [
+    "THE DAILY FINTECH BRIEFING",
+    date,
+    "",
+    "─".repeat(60),
+    "",
+  ];
+
+  stories.forEach((s, i) => {
+    lines.push(`${i + 1}. ${s.headline}`);
+    lines.push("");
+    lines.push(s.body);
+    lines.push(`   — ${s.cite}: ${s.url}`);
+    lines.push("");
+  });
+
+  if (tickers && tickers.length > 0) {
+    lines.push("─".repeat(60));
+    lines.push("MARKET SNAPSHOT");
+    lines.push(`Prices as of 10:30am ET · ${date} · Data via Finnhub`);
+    lines.push("");
+    for (const [group, symbols] of Object.entries(TICKER_GROUPS)) {
+      lines.push(group.toUpperCase());
+      for (const sym of symbols) {
+        const t = tickers.find((x) => x.symbol === sym);
+        if (!t) continue;
+        const sign = t.change >= 0 ? "+" : "";
+        lines.push(`  ${TICKER_NAMES[sym]} (${sym})  $${t.price.toFixed(2)}  ${sign}${t.change.toFixed(2)} (${sign}${t.changePercent.toFixed(2)}%)`);
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push("─".repeat(60));
+  lines.push("© 2026 Cloudflash, Inc.");
+  lines.push("Unsubscribe: https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}");
+
+  return lines.join("\n");
+}
+
 export function buildEmailHtml(
   stories: Story[],
   tickers: TickerData[] | null,
