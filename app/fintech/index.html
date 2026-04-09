@@ -206,58 +206,6 @@
     .form-message.success { color: #a8f0c6; }
     .form-message.error { color: #ffaaaa; }
 
-    /* Latest issue card */
-    .issue-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px 28px;
-      text-decoration: none;
-      color: var(--text);
-      transition: background 0.15s, border-color 0.15s;
-    }
-
-    .issue-card:hover {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.3);
-    }
-
-    .issue-card-label {
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 500;
-      margin-bottom: 6px;
-    }
-
-    .issue-card-subject {
-      font-size: 0.95rem;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .issue-card-date {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    .issue-card-arrow {
-      font-size: 1.1rem;
-      color: var(--muted);
-      flex-shrink: 0;
-      transition: color 0.15s, transform 0.15s;
-    }
-
-    .issue-card:hover .issue-card-arrow {
-      color: var(--text);
-      transform: translateX(3px);
-    }
 
     /* What it is */
     .section {
@@ -313,6 +261,11 @@
       font-size: 0.88rem;
       font-weight: 600;
       margin-bottom: 4px;
+    }
+
+    a.feature-item:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.28);
     }
 
     .feature-desc {
@@ -439,17 +392,14 @@
             <p class="form-message" id="form-message"></p>
           </div>
           <div style="display:flex;flex-direction:row;gap:12px;flex-wrap:wrap">
-            <div class="feature-item subscriber-card" id="subscriber-card" style="display:none;flex-shrink:0;min-width:140px">
+            <div class="feature-item" id="subscriber-card" style="display:none;flex-shrink:0;min-width:140px">
               <div class="feature-num">Subscribers</div>
-              <div class="feature-title" id="subscriber-count-val" style="font-size:1.5rem;letter-spacing:-0.02em"></div>
+              <div class="feature-title" id="subscriber-count-val"></div>
               <div class="feature-desc">fintech professionals</div>
             </div>
-            <a class="issue-card" id="issue-card" href="#" style="display:none;padding:16px 18px;border-radius:6px;min-width:180px;max-width:220px">
-              <div style="min-width:0">
-                <div class="issue-card-label">Latest issue</div>
-                <div class="issue-card-subject" id="issue-card-subject" style="font-size:0.82rem"></div>
-              </div>
-              <div class="issue-card-arrow" style="font-size:0.9rem">→</div>
+            <a class="feature-item" id="issue-card" href="#" style="display:none;text-decoration:none;color:inherit;min-width:180px;max-width:220px;transition:background 0.15s,border-color 0.15s">
+              <div class="feature-num">Latest issue</div>
+              <div class="feature-title" id="issue-card-subject" style="font-weight:500"></div>
             </a>
           </div>
         </div>
