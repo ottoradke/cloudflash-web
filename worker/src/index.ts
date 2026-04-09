@@ -141,7 +141,8 @@ async function fetchTickers(finnhubKey: string): Promise<TickerData[] | null> {
 
 async function generateStories(
   articles: TavilyResult[],
-  anthropicKey: string
+  anthropicKey: string,
+  attempt = 1
 ): Promise<Story[]> {
   const articleText = articles
     .map(
@@ -181,7 +182,15 @@ async function generateStories(
   const stripped = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
   const jsonMatch = stripped.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error("Could not parse stories JSON from Claude");
-  return JSON.parse(jsonMatch[0]) as Story[];
+  try {
+    return JSON.parse(jsonMatch[0]) as Story[];
+  } catch (err) {
+    if (attempt < 3) {
+      console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
+      return generateStories(articles, anthropicKey, attempt + 1);
+    }
+    throw err;
+  }
 }
 
 // --- Save to D1 ---

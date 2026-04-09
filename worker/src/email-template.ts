@@ -74,7 +74,7 @@ export function buildEmailHtml(
     .map(
       (s, i) => `<tr><td style="padding:0 0 32px">
       <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
-        <td style="vertical-align:top;width:70px;font-family:Arial,sans-serif;font-size:32px;font-weight:bold;color:#2179c8;line-height:1;padding:0 20px 20px 0">${i + 1}</td>
+        <td style="vertical-align:top;text-align:center;width:70px;font-family:Arial,sans-serif;font-size:32px;font-weight:bold;color:#2179c8;line-height:1;padding:0 20px 20px 0">${i + 1}</td>
         <td style="vertical-align:top">
           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:19px;font-weight:bold;color:#1a1a1a;line-height:1.3">${s.headline}</p>
           <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#333;line-height:1.7">${s.body} <span style="font-family:Arial,sans-serif;font-size:12px;color:#999;white-space:nowrap">${s.cite} ↗</span></p>
