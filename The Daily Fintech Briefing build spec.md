@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-The Daily Fintech Briefing is a weekday AI-generated email newsletter and companion website. Each morning at 7:30am PT (10:30am ET), a backend job searches multiple fintech news sources, prioritizes stories by subject matter, fetches live market open prices for 11 tracked tickers, writes 10 stories in the style of NextDraft by Dave Pell, and sends the result to all confirmed subscribers via Resend.
+The Daily Fintech Briefing is a weekday AI-generated email newsletter and companion website. Each morning at 7:30am PT (10:30am ET), a backend job searches multiple fintech news sources, prioritizes stories by subject matter, fetches live market prices for 11 tracked tickers, writes 10 stories in the voice of a senior fintech analyst, and sends the result to all confirmed subscribers via Resend.
 
 The website at `cloudflash.com/fintech` serves as the subscriber acquisition page, archive, and home for the product. It matches the existing Cloudflash brand aesthetic: dark background, editorial serif typography, minimal layout.
 
@@ -16,28 +16,32 @@ The website at `cloudflash.com/fintech` serves as the subscriber acquisition pag
 
 ## 2. Architecture
 
-The website is hosted on Vercel (existing setup). The backend pipeline — scheduled job, database, and API endpoints — runs on Cloudflare Workers and D1. DNS remains on Cloudflare. Both live in the same Git repository and deploy independently via separate CI pipelines. This split leverages Vercel's strengths for frontend delivery while keeping compute and data on Cloudflare.
+The website is hosted on Vercel (existing setup). The backend pipeline — scheduled job, database, and API endpoints — runs on Cloudflare Workers and D1. DNS remains on Cloudflare. Both live in the same Git repository and deploy independently via separate CI pipelines.
 
 ### 2.1 Vercel (Frontend Hosting)
 
-Hosts `cloudflash.com` including the `/fintech` landing page, issue archive, and individual issue pages. Deployed from the existing Git repository via Vercel's GitHub integration — Vercel is pointed at the `app/` directory and auto-deploys on every push to main. No changes to the existing Vercel project setup are required beyond adding the new `/fintech` route and pages.
+Hosts `cloudflash.com` including the `/fintech` landing page, issue archive, and individual issue pages. Deployed from the existing Git repository via Vercel's GitHub integration — Vercel is pointed at the `app/` directory and auto-deploys on every push to main.
 
 ### 2.2 Cloudflare Workers (Cron Trigger)
 
-A scheduled Worker runs the daily briefing pipeline at 7:30am PT (cron: `30 7 * * *`). The Worker orchestrates the following steps in sequence:
+A scheduled Worker runs the daily briefing pipeline at 7:30am PT (cron: `30 14 * * 1-5` in UTC). The Worker orchestrates the following steps in sequence:
 
-- Fetches news from PYMNTS, Finextra, American Banker, Reuters, and Bloomberg via web search
-- Fetches ticker prices via a single Yahoo Finance batch API call
-- Calls the Anthropic API (`claude-sonnet-4-6`) with the collected content to write 10 prioritized stories
+- Fetches news from PYMNTS, Finextra, American Banker, Reuters, and Bloomberg via Tavily web search (6 queries)
+- Fetches live ticker prices for 11 fintech stocks via Finnhub, batched at 25/batch to stay under the 30 req/sec rate limit
+- Calls the Anthropic API (`claude-sonnet-4-6`) with the collected articles to write 10 prioritized stories
+- Saves a `pipeline_runs` record with the raw articles JSON and stories JSON (enables regeneration and live preview)
 - Assembles the HTML email using the briefing template
-- Saves the issue to Cloudflare D1
+- Saves the issue to the `issues` table in Cloudflare D1
 - Retrieves the confirmed subscriber list from D1
-- Sends the email to all subscribers via the Resend API
+- Sends the email to all subscribers via Resend, batched at 4/batch with a 1.1s pause to stay under the 5 req/sec rate limit
 - Triggers a Vercel Deploy Hook to rebuild the archive with the new issue
+- Logs every API call (Tavily, Finnhub, Anthropic, Resend) to the `api_logs` table with timing, token usage, and error details
+
+**DST note:** The cron is set to `30 14 * * 1-5` (UTC), which equals 7:30am PDT (UTC-7). On the first Sunday in November, Cloudflare cron does not automatically adjust — the cron must be manually updated to `30 15 * * 1-5` (UTC) to maintain 7:30am PST (UTC-8) delivery. Switch back in March.
 
 ### 2.3 Cloudflare D1 (Database)
 
-SQLite database with two primary tables:
+SQLite database with five tables:
 
 **issues**
 - `id` (integer, primary key)
@@ -49,54 +53,97 @@ SQLite database with two primary tables:
 **subscribers**
 - `id` (integer, primary key)
 - `email` (text, unique)
-- `confirmed` (boolean, default false)
+- `confirmed` (integer, 0 or 1)
 - `subscribed_at` (timestamp)
 - `unsubscribe_token` (text, unique UUID)
 
+**previews**
+- `id` (integer, primary key)
+- `date` (text, YYYY-MM-DD)
+- `html` (text — full rendered HTML of the preview)
+- `created_at` (timestamp)
+
+Previews are generated from the admin page and are not considered issues. They are saved to enable sending to an email address after generation.
+
+**pipeline_runs**
+- `id` (integer, primary key)
+- `date` (text, YYYY-MM-DD)
+- `articles_json` (text — raw Tavily results as JSON, saved before Claude call)
+- `stories_json` (text — Claude story output as JSON, saved after Claude call)
+- `created_at` (timestamp)
+
+Saved during each pipeline run and used by the admin live preview to re-run Claude against cached articles without hitting Tavily or Finnhub again.
+
+**api_logs**
+- `id` (integer, primary key)
+- `service` (text — tavily, anthropic, finnhub, resend)
+- `success` (integer, 0 or 1)
+- `duration_ms` (integer — request duration in milliseconds)
+- `tokens_used` (integer — Anthropic only: input + output tokens)
+- `error_message` (text — HTTP status + response body on failure)
+- `created_at` (timestamp)
+
+One row per API call. Queried by the admin page to show per-service usage counts across rolling time windows (1d, 7d, 14d, 21d, 28d).
+
 ### 2.4 Resend
 
-Handles all outbound email. Two types of sends:
+Handles all outbound email. Three types of sends:
 
-- **Transactional** — confirmation emails on signup, sent immediately via the Resend API
+- **Confirmation** — sent on signup, links to `cloudflash.com/confirm?token=...`
 - **Broadcast** — the daily briefing, sent to all confirmed subscribers each morning
+- **Ad hoc** — one-off resends via `/resend-to?email=...` and preview sends via `/preview/send`
 
-From address: `Fintech Briefing <otto@cloudflash.com>`. Domain `cloudflash.com` must have SPF, DKIM, and DMARC DNS records added in Cloudflare DNS and verified in the Resend dashboard before the first send.
+From address: `Fintech Briefing <briefing@cloudflash.com>`. Domain verified in Resend with SPF, DKIM, and DMARC records in Cloudflare DNS.
+
+Rate limit: 5 emails/sec. Managed with a batch size of 4 and a 1.1s pause between batches.
 
 ### 2.5 Anthropic API
 
-Claude Sonnet 4 (`claude-sonnet-4-6`) is called once per daily run with a structured prompt that includes the collected news content and the full story-writing instructions from `SKILL.md`. The API key is stored as a Cloudflare Worker secret.
+`claude-sonnet-4-6` is called once per daily run with a structured prompt that includes the collected news articles and story-writing instructions. On JSON parse failure the call retries up to 3 times before throwing. The API key is stored as a Cloudflare Worker secret.
 
 ### 2.6 Finnhub Ticker API
 
-Live prices are fetched from Finnhub (`finnhub.io`) using the authenticated quote endpoint, called once per ticker:
+Live prices are fetched from Finnhub using the authenticated quote endpoint, called once per ticker:
 
 ```
 GET https://finnhub.io/api/v1/quote?symbol=ALKT&token=<FINNHUB_API_KEY>
 ```
 
-All 11 tickers are fetched in parallel at run time. The API key is stored as a Cloudflare Worker secret (`FINNHUB_API_KEY`). If the request fails, the ticker table is omitted from that day's issue. Called at market open (7:30am PT / 10:30am ET).
+All 11 tickers are fetched in parallel within batches of 25 (rate limit: 30 req/sec, no monthly cap). The API key is stored as a Cloudflare Worker secret. If the fetch fails, the ticker table is omitted from that day's issue. Prices reflect the moment the pipeline runs (10:30am ET) and are labeled "Prices as of 10:30am ET · Data via Finnhub" in the email.
 
-### 2.7 Repository Structure
+### 2.7 Tavily Search API
 
-One Git repository hosts both the Vercel frontend and the Cloudflare Worker. Each platform deploys from its own subdirectory and ignores the other:
+News is fetched from Tavily using domain-scoped queries, one per news source (6 total). Each query returns up to 5 results. Rate limit: 1,000 credits/month on the free Researcher plan. 6 searches/run × 20 weekdays ≈ 120/month — well within the limit.
+
+### 2.8 Repository Structure
 
 ```
 cloudflash/
-├── app/                ← Vercel deploys this (Next.js or static site)
-├── worker/             ← Cloudflare deploys this
-│   ├── wrangler.toml   ← Worker config, D1 bindings, cron schedule
-│   ├── src/index.ts    ← Worker logic
-│   └── schema.sql      ← D1 migrations
+├── app/                        ← Vercel deploys this
+│   ├── index.html              ← Main landing page
+│   ├── fintech/
+│   │   ├── index.html          ← /fintech landing page
+│   │   ├── archive/index.html  ← Issue archive
+│   │   ├── issue/index.html    ← Individual issue viewer
+│   │   └── admin/index.html    ← Admin preview page
+│   ├── robots.txt
+│   ├── favicon.svg
+│   ├── logo.png
+│   ├── og-image.png
+│   ├── og-fintech.png
+│   └── vercel.json             ← Rewrites for /confirm and /unsubscribe
+├── worker/
+│   ├── wrangler.toml           ← Worker config, D1 bindings, cron schedule
+│   ├── src/
+│   │   ├── index.ts            ← Worker logic and all HTTP endpoints
+│   │   └── email-template.ts  ← HTML email builder
+│   └── schema.sql              ← D1 table definitions
 └── .github/
     └── workflows/
         └── deploy-worker.yml
 ```
 
-Vercel auto-deploys via its own GitHub App integration — no workflow file needed on your side. It watches the `app/` directory. Cloudflare deploys via a GitHub Actions workflow that runs `wrangler deploy` whenever files in `worker/` change. They trigger independently and never step on each other.
-
-### 2.8 GitHub Actions: Worker Deployment
-
-A workflow file at `.github/workflows/deploy-worker.yml` handles Cloudflare Worker deployments automatically on push to main. It only fires when Worker code changes:
+### 2.9 GitHub Actions: Worker Deployment
 
 ```yaml
 name: Deploy Worker
@@ -114,84 +161,80 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 ```
 
-The `CLOUDFLARE_API_TOKEN` is stored as a GitHub repository secret (Settings > Secrets). Vercel-only commits don't trigger this workflow, and Worker commits don't trigger a Vercel deploy — each platform only reacts to changes in its own directory.
+### 2.10 D1 Migrations
 
-### 2.9 D1 Migrations
+Schema changes are applied manually via Wrangler CLI:
 
-D1 schema changes are applied manually via the Wrangler CLI rather than automatically on push, to prevent unintended schema changes in production:
+```
+wrangler d1 execute briefing-db --remote --command "ALTER TABLE ..."
+```
+
+`schema.sql` is the source of truth and is updated with every schema change. New environments can be initialized with:
 
 ```
 wrangler d1 execute briefing-db --file=worker/schema.sql
 ```
 
-Any schema change is committed to the repo, reviewed, and then applied manually. This is the standard approach for production D1 databases where accidental migrations would be destructive.
+### 2.11 Vercel Rewrites
+
+`app/vercel.json` proxies two subscriber-facing routes to the Worker so the `api.cloudflash.com` subdomain is never exposed in emails:
+
+```json
+{
+  "rewrites": [
+    { "source": "/confirm", "destination": "https://api.cloudflash.com/confirm?:query" },
+    { "source": "/unsubscribe", "destination": "https://api.cloudflash.com/unsubscribe?:query" }
+  ]
+}
+```
+
+The `?:query` suffix is required to forward the token query parameter. `vercel.json` must live in `app/` (not the repo root) because the Vercel project root is set to `app/`.
 
 ---
 
 ## 3. Landing Page
 
-Located at `cloudflash.com/fintech`. The primary design directive is to match the look and feel of the existing Cloudflash landing page (`cloudflash.com`) exactly — the `/fintech` page should feel like a natural extension of the main site, not a standalone product.
-
-> **Note:** The existing Cloudflash site uses: near-black background (`#0a0a0a`), Georgia serif for display headings, Arial for UI/body text, 0.5px borders in `#222`, muted palette with `#666` and `#999` for secondary text, and a tight editorial grid. All of these carry through to `/fintech` without modification.
+Located at `cloudflash.com/fintech`. Matches the Cloudflash brand aesthetic: dark background (`#0a0a0a`), Georgia serif for display, Arial for UI, `#222` borders, muted palette.
 
 ### 3.1 Navigation
 
-Match the existing Cloudflash nav pattern exactly. Additions specific to this page:
-
-- Cloudflash wordmark + product name "The Daily Fintech Briefing" on the left
-- "← cloudflash.com" back link on the right, styled as the existing nav link
-- Bottom border: `0.5px solid #222` (matches existing site)
+Cloudflash wordmark + "The Daily Fintech Briefing" on the left. "← cloudflash.com" back link on the right. Bottom border: `0.5px solid #222`.
 
 ### 3.2 Hero Section
 
-Primary layout, consistent with the existing Cloudflash holding page structure:
-
-- Eyebrow: "A product by Cloudflash" — Arial, 11px, `#555`, uppercase, matching existing site label style
-- Headline: "Fintech news, without the noise." — matching existing site heading size and weight; accent word in `#6B7FA8`
-- Subhead: one rotating tagline (see section 3.6 below)
-- Email signup form: text input + "Subscribe →" button, styled to match existing site form elements
-- Fine print: "Free · No spam · Unsubscribe anytime" in `#555`
+- Eyebrow: "A product by Cloudflash"
+- Headline: "Fintech news, without the noise."
+- Rotating tagline (see section 3.6)
+- Email signup form → POSTs to `api.cloudflash.com/subscribe`
+- Two cards to the right of the form: Latest Issue (links to archive) and Subscriber Count (blurred, "In Beta · Not Counting Yet" label)
 
 ### 3.3 What It Is Section
 
-Two-column grid matching the existing site's Status/Expected/Platforms layout pattern. Left column: section label. Right column: description + 2×2 feature grid. Each feature item has a number, title, and one-line description:
-
+Two-column grid. Left: section label. Right: 2×2 feature grid:
 - 01 — AI-prioritized stories
 - 02 — Vendor watchlist
 - 03 — Market open prices
-- 04 — NextDraft tone
+- 04 — Analyst voice
 
-### 3.4 Sample Issue Section
+### 3.4 Meta Strip
 
-A live preview of a real issue rendered inline on the page — showing 3 sample stories and a snippet of the ticker table. Updates to the most recent issue once publishing begins; static placeholder until then. The sample card uses the existing site's border and background treatment (`#0d0d0d` card on `#0a0a0a` background).
+Four stats: Cadence (Every weekday), Delivery (7:30am PT), Stories (10 per issue), Price (Free).
 
-### 3.5 Meta Strip
+### 3.5 Issue Archive Link
 
-A horizontal row of four stats mirroring the existing site's Status/Platforms metadata row: Cadence (Every weekday), Delivery (7:30am PT), Stories (10 per issue), Price (Free).
+Links to `cloudflash.com/fintech/archive`.
 
 ### 3.6 Rotating Taglines
 
-The hero subhead cycles through the following lines on page load (randomized or sequential). New taglines can be added to this list over time:
-
+The hero subhead cycles through the following lines (randomized):
 - "written by AI, edited by nobody — which is either a feature or a disclaimer depending on your risk tolerance."
 - "written by AI, edited by nobody — verify before forwarding to your board."
 
-> **TODO:** Add more tagline variations over time. The rotating copy is a brand voice opportunity — dry, self-aware, and fintech-specific. Consider adding one new line per month.
+> **TODO:** Add more tagline variations over time. The rotating copy is a brand voice opportunity — dry, self-aware, and fintech-specific.
 
-### 3.7 Alternative Design
+### 3.7 Footer
 
-An alternative layout was explored during initial design that gives the `/fintech` page a more independent, newsletter-focused identity. It can be used if the team decides the page warrants a stronger standalone presence. Key differences from the primary design:
-
-- Larger, more prominent navigation bar with explicit product branding
-- Hero headline at 52px (larger than main site)
-- Explicit full-bleed section dividers between content blocks
-- More expansive feature grid with longer descriptions per item
-
-### 3.8 Footer
-
-- © 2026 Cloudflash, Inc. on the left — matching existing site footer exactly
-- `cloudflash.com` on the right
-- Top border: `0.5px solid #1a1a1a` (matches existing site)
+© 2026 Cloudflash, Inc. on the left. `cloudflash.com` on the right. Top border: `0.5px solid #1a1a1a`.
 
 ---
 
@@ -201,64 +244,55 @@ An alternative layout was explored during initial design that gives the `/fintec
 
 - User enters email on landing page and clicks Subscribe
 - Worker validates email format
-- Checks for duplicate in subscribers table
+- Checks for duplicate; if already confirmed, returns 409
 - Inserts unconfirmed record with a unique UUID `unsubscribe_token`
-- Sends a confirmation email via Resend with a confirm link
+- Sends a confirmation email via Resend
 
 ### 4.2 Confirmation
 
-- Confirm link hits a Cloudflare Worker endpoint: `GET https://api.cloudflash.com/confirm?token=UUID`
-- Worker looks up the token, sets `confirmed = true`
-- Redirects to a "You're subscribed" confirmation page
+Two-step to prevent security scanners from auto-confirming:
+
+- Confirmation email links to `cloudflash.com/confirm?token=...`
+- Vercel proxies to `api.cloudflash.com/confirm?token=...`
+- **GET** — Worker renders a confirmation page with a button
+- **POST** — Worker sets `confirmed = 1`, redirects to `cloudflash.com/fintech?status=confirmed`
 
 ### 4.3 Unsubscribe
 
-- Every briefing email includes an unsubscribe link in the footer
-- Link hits a Cloudflare Worker endpoint: `GET https://api.cloudflash.com/unsubscribe?token=UUID`
-- Worker deletes or soft-deletes the subscriber record
-- Redirects to a "You've been unsubscribed" page
+- Footer link in every email: `cloudflash.com/unsubscribe?token=...`
+- Vercel proxies to `api.cloudflash.com/unsubscribe?token=...`
+- Worker deletes the subscriber record, redirects to `cloudflash.com/fintech?status=unsubscribed`
 
 ---
 
 ## 5. Email Template
 
-The HTML email uses fully inline styles for maximum Gmail and Outlook compatibility. Georgia serif for editorial content, Arial for UI elements. Max-width 600px, white background.
+Fully inline styles for Gmail and Outlook compatibility. Georgia serif for editorial content, Arial for UI. Max-width 600px, white background.
 
 ### 5.1 Structure
 
-- **Header:** Small uppercase "The Daily Fintech Briefing" label + full date. No large masthead — understated, straight into the stories.
-- **10 numbered stories:** each with a headline, 3–5 sentence paragraph, and inline source citation using the ↗ arrow
-- **Ticker snapshot table:** 11 stocks across 4 groups (Digital Banking, Core Banking, Payments & Rails, AI & Lending), alphabetized within each group
-- **Footer:** source credits + NextDraft attribution + unsubscribe link
+- **Header:** Cloudflash logo + "The Daily Fintech Briefing" + full date + subscribe nudge
+- **10 numbered stories:** headline + 3–5 sentence paragraph + inline source citation with ↗ link
+- **Ticker snapshot table:** 11 stocks across 4 groups
+- **Footer:** "Prices as of 10:30am ET · [DATE] · Data via Finnhub" · sources · unsubscribe link
 
 ### 5.2 Ticker Groups
 
-**Digital Banking**
-- Alkami Technology (ALKT)
-- NCR Voyix (VYX)
-- Q2 Holdings (QTWO)
+**Digital Banking:** Alkami Technology (ALKT), NCR Voyix (VYX), Q2 Holdings (QTWO)
 
-**Core Banking**
-- FIS (FIS)
-- Fiserv (FI)
-- Jack Henry (JKHY)
+**Core Banking:** FIS (FIS), Fiserv (FI), Jack Henry (JKHY)
 
-**Payments & Rails**
-- ACI Worldwide (ACIW)
-- Green Dot (GDOT)
-- Marqeta (MQ)
+**Payments & Rails:** ACI Worldwide (ACIW), Green Dot (GDOT), Marqeta (MQ)
 
-**AI & Lending**
-- nCino (NCNO)
-- Upstart (UPST)
+**AI & Lending:** nCino (NCNO), Upstart (UPST)
 
-> Not shown (candidates for future sections): Fraud & Compliance (EFX, NDAQ), Wealth & Capital Markets (BR, ENV, SEIC, TEMN).
+> Candidates for future ticker groups: Fraud & Compliance (EFX, NDAQ), Wealth & Capital Markets (BR, ENV, SEIC, TEMN).
 
 ### 5.3 Price Formatting
 
 - Positive change: `#1a6e1a` (dark green)
 - Negative change: `#b91c1c` (dark red)
-- Price labeled: "Prices at market open · 10:30am ET · [DATE] · Data via Yahoo Finance"
+- Footer note: "Prices as of 10:30am ET · [DATE] · Data via Finnhub"
 
 ---
 
@@ -269,13 +303,11 @@ The HTML email uses fully inline styles for maximum Gmail and Outlook compatibil
 - PYMNTS.com
 - Finextra.com
 - American Banker
-- Reuters (fintech/banking)
-- Bloomberg (technology/banking/fintech)
+- Reuters (fintech/banking query)
+- Bloomberg (fintech banking technology query)
 - Bloomberg Money Stuff by Matt Levine
 
 ### 6.2 Priority Order
-
-Stories are selected and ranked in this order, with higher-priority topics filling slots first:
 
 1. AI in banking and financial services
 2. Bank technology and digital banking
@@ -293,7 +325,7 @@ Stories are selected and ranked in this order, with higher-priority topics filli
 
 ### 6.3 Vendor Watchlist
 
-Stories involving any of the following vendors are bumped ahead of generic stories on the same topic. Full list maintained in `SKILL.md`.
+Stories involving any of the following vendors are bumped ahead of generic stories on the same topic.
 
 **Digital Banking / Front-End:** Q2, Alkami, Apiture, Backbase, Bottomline Technologies, ebankIT, Finalytics.ai, Lumen Digital, Moxian, NCR Voyix, Personetics, Tyfone
 
@@ -313,19 +345,91 @@ Stories involving any of the following vendors are bumped ahead of generic stori
 
 ### 6.4 Writing Style
 
-Dry, witty, editorial — like a smart colleague summarizing the news. Inspired by the format of NextDraft by Dave Pell. Each story: punchy headline + 3–5 sentence paragraph + inline source citation.
+Stories are written in the voice of a senior fintech analyst writing to a trusted colleague. Conversational and personal in voice — with a point of view, not just a summary. Each story includes thoughtful analysis of what the news means for banks, vendors, or the industry, and where relevant a strategic observation about what it signals or what comes next. Dry wit is welcome but secondary to genuine insight.
+
+Headline: punchy, no clickbait, no "This Is Why" constructions.
+Body: 3–5 sentences with key facts, honest read on what it means, and a strategic observation where warranted.
+
+### 6.5 JSON Parse Retry
+
+If Claude returns malformed JSON, the pipeline retries the Anthropic call up to 3 times before throwing. This handles transient formatting failures without manual intervention.
 
 ---
 
 ## 7. Issue Archive
 
-Each daily issue is saved to Cloudflare D1 and rendered as a public webpage at `cloudflash.com/fintech/[YYYY-MM-DD]`. The archive index page at `cloudflash.com/fintech/archive` lists all past issues with date and subject line. Archive pages are statically generated by Vercel after each issue is saved. A Cloudflare Worker triggers a Vercel Deploy Hook after each daily run to rebuild the archive with the new issue.
+Each daily issue is saved to D1 and rendered as a public webpage. Archive pages are client-side rendered — JavaScript fetches from the Worker API and builds the page dynamically.
+
+- `cloudflash.com/fintech/archive` — lists all issues by date, links to individual pages
+- `cloudflash.com/fintech/issue?date=YYYY-MM-DD` — renders the full issue HTML in a sandboxed iframe
+
+A Vercel Deploy Hook is triggered after each daily run to rebuild the static site with updated content.
 
 ---
 
-## 8. Secrets & Environment Variables
+## 8. Admin Page
 
-All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Never committed to version control.
+Located at `cloudflash.com/fintech/admin`. Internal tool — requires a preview key stored in `localStorage`.
+
+### 8.1 Preview Key
+
+The key is set via `wrangler secret put PREVIEW_KEY`. Entered once in the admin UI and persisted in `localStorage` across sessions.
+
+### 8.2 Buttons
+
+- **Mock preview** — instantly renders a mock email using hardcoded stories and tickers. No API calls.
+- **Fetch articles** — calls `/pipeline/fetch`, runs Tavily and saves a new `pipeline_runs` record. Takes 15–20 seconds. Use this to get fresh articles before a live preview.
+- **Live preview** — calls `/preview/live`, re-runs Claude against the latest saved articles, fetches fresh tickers via Finnhub, saves the result to the `previews` table, and renders the email in an iframe. Takes 20–30 seconds. Costs 1 Anthropic call + 11 Finnhub calls per click.
+
+After a live preview loads, a **Send preview to…** input and Send button appear. Entering an email and clicking Send calls `/preview/send`, which delivers the saved preview via Resend.
+
+All buttons are visually disabled (40% opacity) while a request is in flight.
+
+### 8.3 API Usage Cards
+
+Four cards showing per-service call counts across selectable time windows: 1 day, 7 days, 14 days, 21 days, 28 days. Each window is cumulative (not a single day's count).
+
+| Service | Monthly limit | Rate limit |
+|---------|--------------|------------|
+| Tavily | 1,000 / month | — |
+| Anthropic | Pay-as-you-go · No cap | — |
+| Finnhub | No monthly cap | 30 req/sec |
+| Resend | 50,000 / month | 5 req/sec |
+
+Failures shown in red. Counts sourced from the `api_logs` D1 table.
+
+---
+
+## 9. Worker HTTP Endpoints
+
+All endpoints are on `api.cloudflash.com` (Cloudflare Worker).
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/subscribe` | — | Subscribe an email address |
+| GET | `/confirm?token=` | — | Show confirmation page |
+| POST | `/confirm?token=` | — | Confirm subscription |
+| GET | `/unsubscribe?token=` | — | Delete subscriber, redirect |
+| GET | `/resend-to?email=` | — | Resend latest issue to a subscriber |
+| GET | `/run` | — | Trigger a full pipeline run |
+| GET | `/test-run?email=` | — | Run pipeline, send only to one email |
+| GET | `/test-tickers` | — | Fetch and return live ticker data |
+| GET | `/preview?key=` | PREVIEW_KEY | Return mock email HTML |
+| GET | `/preview/live?key=` | PREVIEW_KEY | Re-run Claude on cached articles, save to previews |
+| GET | `/preview/send?key=&id=&to=` | PREVIEW_KEY | Send a saved preview to an email address |
+| GET | `/pipeline/fetch?key=` | PREVIEW_KEY | Fetch fresh articles from Tavily, save to pipeline_runs |
+| GET | `/api/issues` | — | List all issues (id, date, subject) |
+| GET | `/api/issues/:date` | — | Get a single issue by date |
+| GET | `/api/subscribers/count` | — | Return confirmed subscriber count |
+| GET | `/api/logs` | — | Return per-service API usage counts by time window |
+| GET | `/health` | — | Health check |
+| GET | `/robots.txt` | — | Disallow all crawlers |
+
+---
+
+## 10. Secrets & Environment Variables
+
+All secrets stored as Cloudflare Worker secrets (`wrangler secret put`). Never committed to version control.
 
 | Secret | Description |
 |--------|-------------|
@@ -334,133 +438,50 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 | `VERCEL_DEPLOY_HOOK` | Vercel Deploy Hook URL to trigger archive rebuilds |
 | `FINNHUB_API_KEY` | Finnhub API key for live ticker prices |
 | `TAVILY_API_KEY` | Tavily API key for news search |
-| `PREVIEW_KEY` | Shared secret for the admin preview page |
+| `PREVIEW_KEY` | Shared secret for the admin preview page and pipeline fetch |
 | `ALERT_EMAIL` | Email address for pipeline failure alerts (ottoradke@gmail.com) |
 | `CLOUDFLARE_API_TOKEN` | Stored in GitHub repository secrets for CI deployment |
 
-## 8.1 Third-Party Services & Plans
+## 10.1 Third-Party Services & Plans
 
 | Service | What it does | Plan | Limit |
 |---------|-------------|------|-------|
 | **Anthropic** | Generates 10 stories per issue using Claude Sonnet 4.6 | Pay-as-you-go | ~$3/M input tokens, ~$15/M output tokens. Each run costs pennies. No monthly cap. |
-| **Tavily** | Web search for fintech news across 6 sources | Free (Researcher) | 1,000 credits/month. Each search = 1 credit. 6 searches/run × 20 weekdays = ~120/month. Well within limit. |
-| **Finnhub** | Live stock prices for 11 fintech tickers at market open | Free | Monthly cap unpublished — monitor via dashboard. 11 calls/run. |
-| **Resend** | Sends the daily briefing email and confirmation emails | Pro ($20/month) | 50,000 emails/month. No daily cap. Upgraded from free (was capped at 100/day). |
+| **Tavily** | Web search for fintech news across 6 sources | Free (Researcher) | 1,000 credits/month. Each search = 1 credit. 6 searches/run × 20 weekdays = ~120/month. |
+| **Finnhub** | Live stock prices for 11 fintech tickers at market open | Free | No monthly cap. 30 req/sec rate limit. Batched at 25/batch in the pipeline. |
+| **Resend** | Sends daily briefing, confirmation, ad hoc, and preview emails | Pro ($20/month) | 50,000 emails/month. 5 emails/sec rate limit. Batched at 4/batch with 1.1s pause. |
 | **Cloudflare Workers** | Runs the pipeline, subscriber API, and all endpoints | Free (Workers) | 100,000 requests/day, 10ms CPU/request. Cron trigger not counted toward request limit. |
-| **Cloudflare D1** | Stores issues, subscribers, and API usage logs | Free | 5M reads/day, 100K writes/day. Well within usage. |
+| **Cloudflare D1** | Stores issues, subscribers, pipeline runs, previews, and API logs | Free | 5M reads/day, 100K writes/day. |
 | **Vercel** | Hosts cloudflash.com including the /fintech landing page and archive | Pro | Unlimited bandwidth on Pro plan. |
 
 ---
 
-## 9. Open Items & Future Considerations
+## 11. Error Alerting
 
-### 9.1 Immediate
-
-- Add Vercel Deploy Hook URL as a Cloudflare Worker secret to trigger archive rebuilds
-- Verify `cloudflash.com` domain in Resend (SPF, DKIM, DMARC)
-
-### 9.2 Near-term
-
-- Add ticker groups: Fraud & Compliance (EFX, NDAQ) and Wealth & Capital Markets (BR, ENV, SEIC, TEMN)
-- Add more rotating taglines to the landing page hero (see section 3.6)
-- Implement issue archive and per-issue web pages
-- Add subscriber count display on landing page once audience grows
-
-### 9.3 Later
-
-- Web-based admin view to preview each day's briefing before it sends
-- Manual override / story editing before send
-- Analytics: open rate, click rate per story (Resend provides this)
-- Potential paid tier with deeper analysis or custom vendor watchlists
+If the scheduled pipeline throws an unhandled error, `sendAlert()` sends an email to `ALERT_EMAIL` (ottoradke@gmail.com) via Resend with the error message and stack trace. The error is re-thrown after alerting so it appears in Cloudflare Worker logs.
 
 ---
 
-## 10. Suggested Development Order
+## 12. Open Items & Future Considerations
 
-The following sequence minimizes blocked work and ensures each phase is testable before building on top of it. Each phase has a clear deliverable you can verify before moving on.
+### 12.1 Near-term
 
-### Phase 1 — Foundation *(do this first)*
+- Add more rotating taglines to the landing page hero (see section 3.6)
+- Add ticker groups: Fraud & Compliance (EFX, NDAQ) and Wealth & Capital Markets (BR, ENV, SEIC, TEMN)
 
-Set up the infrastructure scaffolding before writing any feature code. Nothing else can proceed without this.
+### 12.2 Later
 
-- Create the monorepo structure: `app/` and `worker/` directories in the existing cloudflash repo
-- Install Wrangler CLI and authenticate with your Cloudflare account
-- Create the Cloudflare D1 database: `wrangler d1 create briefing-db`
-- Write and apply the initial `schema.sql` (issues and subscribers tables)
-- Create a minimal `wrangler.toml` that binds to the D1 database
-- Add `CLOUDFLARE_API_TOKEN` to GitHub repository secrets
-- Add the `deploy-worker.yml` GitHub Actions workflow
-- Deploy a hello-world Worker to verify the pipeline end to end
-
-> **Deliverable:** a Worker that deploys on push and can read/write to D1. Nothing user-facing yet.
-
-### Phase 2 — Email Pipeline *(the core product)*
-
-Build the Worker that generates and sends the briefing. This is the most important piece — get it working before touching the website.
-
-- Port the `SKILL.md` pipeline logic into the Worker: web search, ticker fetch, Anthropic API call, HTML assembly
-- Store `ANTHROPIC_API_KEY` and `RESEND_API_KEY` as Cloudflare Worker secrets via `wrangler secret put`
-- Test the Anthropic API call in isolation — verify story generation works
-- Test the Yahoo Finance batch fetch — verify ticker data parses correctly
-- Assemble the full HTML email and send a test to yourself via Resend
-- Save the generated issue to D1
-- Set the cron trigger in `wrangler.toml`: `30 7 * * *`
-- Verify the cron fires correctly using `wrangler tail` to watch live logs
-
-> **Deliverable:** a Worker that runs on schedule, generates a real briefing, and sends it to one email address. Subscriber management not yet needed.
-
-### Phase 3 — Subscriber Management
-
-Add the API endpoints that handle signups, confirmations, and unsubscribes. These are Worker routes, not Vercel routes.
-
-- `POST /subscribe` — validate email, insert unconfirmed record, send confirmation email via Resend
-- `GET /confirm?token=UUID` — set `confirmed = true`, redirect to confirmation page
-- `GET /unsubscribe?token=UUID` — delete subscriber record, redirect to unsubscribe page
-- Update the daily send to pull confirmed subscribers from D1 and send to all of them
-- Add the unsubscribe link to the email footer using each subscriber's unique token
-- Verify `cloudflash.com` domain in Resend — add SPF, DKIM, DMARC records in Cloudflare DNS
-- Rotate the Resend API key (the original was exposed — generate a new one before this phase)
-
-> **Deliverable:** anyone can subscribe, confirm, and unsubscribe. The daily send reaches all confirmed subscribers.
-
-### Phase 4 — Landing Page
-
-Build the `/fintech` page in the Vercel app. By this point the Worker is already running daily, so you can use a real issue as the sample.
-
-- Add the `/fintech` route to the existing Vercel app
-- Build the landing page matching the existing Cloudflash site aesthetic (see section 3)
-- Wire up the email signup form to POST to the Worker's `/subscribe` endpoint
-- Add the rotating taglines to the hero subhead
-- Add the meta strip (cadence, delivery, stories, price)
-- Drop in a real issue as the sample — pull the latest from D1 or hardcode the first real one
-- Test the full signup flow end to end from the landing page
-
-> **Deliverable:** a live page at `cloudflash.com/fintech` where people can subscribe.
-
-### Phase 5 — Issue Archive
-
-Add the archive so past issues are publicly accessible and discoverable.
-
-- Add the `/fintech/archive` index page listing all past issues by date
-- Add individual issue pages at `/fintech/[YYYY-MM-DD]`
-- Add `VERCEL_DEPLOY_HOOK` as a Worker secret and trigger it after each daily save to D1
-- Verify archive rebuilds correctly after a new issue is saved
-
-> **Deliverable:** every past issue is accessible at a permanent URL. The archive grows automatically each weekday.
-
-### Phase 6 — Polish & Monitoring
-
-Once everything is running, harden it.
-
-- Add error alerting — email or Slack notification if the daily Worker run fails
-- Monitor Yahoo Finance endpoint reliability — add a fallback or alert if it stops responding
-- Review Resend delivery analytics after the first week — check open rates and bounces
-- Add subscriber count to the landing page once you have a meaningful number
-- Consider a simple admin page to preview the next day's briefing before it sends
+- Manual story editing / override before the daily send
+- Analytics: open rate, click rate per story (available via Resend dashboard)
+- Potential paid tier with deeper analysis or custom vendor watchlists
+- Anthropic credit balance monitoring (console.anthropic.com API requires browser session auth — not accessible from the Worker)
 
 ---
 
 ## Appendix: Related Files
 
-- `SKILL.md` — Cowork scheduled task definition (source of truth for story pipeline logic)
-- `daily-fintech-briefing.md` — Exported copy of the task file with all updates applied
+- `worker/src/index.ts` — Worker logic, all pipeline steps and HTTP endpoints
+- `worker/src/email-template.ts` — HTML email builder, ticker table, story layout
+- `worker/schema.sql` — D1 table definitions (source of truth)
+- `app/fintech/admin/index.html` — Admin preview page
+- `app/vercel.json` — Vercel rewrites for /confirm and /unsubscribe
