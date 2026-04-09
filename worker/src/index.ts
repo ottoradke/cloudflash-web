@@ -301,6 +301,10 @@ async function sendBriefing(
       to,
       subject,
       html: personalizedHtml,
+      headers: {
+        "List-Unsubscribe": `<https://cloudflash.com/unsubscribe?token=${unsubscribeToken}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
     }),
   });
   const resendDuration = Date.now() - resendStart;
@@ -467,6 +471,15 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
     timeZone: "America/Los_Angeles",
   });
   const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); // YYYY-MM-DD in PT
+
+  const existing = await env.DB
+    .prepare("SELECT id FROM issues WHERE date = ?")
+    .bind(dateISO)
+    .first<{ id: number }>();
+  if (existing) {
+    console.log(`Issue already exists for ${dateISO} (id: ${existing.id}) — aborting to prevent duplicate send.`);
+    return;
+  }
 
   console.log("Fetching news...");
   const articles = await fetchAllNews(env.TAVILY_API_KEY, env.DB);
@@ -743,6 +756,10 @@ export default {
     }
 
     if (url.pathname === "/test-run") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", { status: 401 });
+      }
       const email = url.searchParams.get("email");
       if (!email) return new Response("Missing email", { status: 400 });
       try {
@@ -760,6 +777,10 @@ export default {
     }
 
     if (url.pathname === "/run") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) {
+        return new Response("Unauthorized", { status: 401 });
+      }
       try {
         await runPipeline(env);
         return new Response(JSON.stringify({ status: "ok" }), {
