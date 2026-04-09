@@ -62,7 +62,7 @@ function buildTickerTable(tickers: TickerData[], date: string): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;margin-top:32px">
     <tr><td colspan="3" style="padding:16px 0 8px;font-family:Arial,sans-serif;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.05em">Market Snapshot</td></tr>
     ${groupRows}
-    <tr><td colspan="3" style="padding:12px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#bbb">Prices at market open · 10:30am ET · ${date} · Data via Yahoo Finance</td></tr>
+    <tr><td colspan="3" style="padding:12px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#bbb">Prices as of 10:30am ET · ${date} · Data via Finnhub</td></tr>
   </table>`;
 }
 
@@ -115,7 +115,7 @@ export function buildEmailHtml(
       ${storyHtml}
       <tr><td>${tickerHtml}</td></tr>
       <tr><td style="padding:32px 0 0;border-top:1px solid #eee;font-family:Arial,sans-serif;font-size:12px;color:#bbb;line-height:1.6">
-        <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Yahoo Finance</p>
+        <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Finnhub</p>
         <p style="margin:0">&#169; 2026 Cloudflash, Inc. · Est. 2000 · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
       </td></tr>
     </table>
