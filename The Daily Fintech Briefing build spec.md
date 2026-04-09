@@ -333,8 +333,22 @@ All secrets are stored as Cloudflare Worker secrets (`wrangler secret put`). Nev
 | `RESEND_API_KEY` | Resend API key |
 | `VERCEL_DEPLOY_HOOK` | Vercel Deploy Hook URL to trigger archive rebuilds |
 | `FINNHUB_API_KEY` | Finnhub API key for live ticker prices |
+| `TAVILY_API_KEY` | Tavily API key for news search |
+| `PREVIEW_KEY` | Shared secret for the admin preview page |
 | `ALERT_EMAIL` | Email address for pipeline failure alerts (ottoradke@gmail.com) |
 | `CLOUDFLARE_API_TOKEN` | Stored in GitHub repository secrets for CI deployment |
+
+## 8.1 Third-Party Services & Plans
+
+| Service | What it does | Plan | Limit |
+|---------|-------------|------|-------|
+| **Anthropic** | Generates 10 stories per issue using Claude Sonnet 4.6 | Pay-as-you-go | ~$3/M input tokens, ~$15/M output tokens. Each run costs pennies. No monthly cap. |
+| **Tavily** | Web search for fintech news across 6 sources | Free (Researcher) | 1,000 credits/month. Each search = 1 credit. 6 searches/run × 20 weekdays = ~120/month. Well within limit. |
+| **Finnhub** | Live stock prices for 11 fintech tickers at market open | Free | Monthly cap unpublished — monitor via dashboard. 11 calls/run. |
+| **Resend** | Sends the daily briefing email and confirmation emails | Pro ($20/month) | 50,000 emails/month. No daily cap. Upgraded from free (was capped at 100/day). |
+| **Cloudflare Workers** | Runs the pipeline, subscriber API, and all endpoints | Free (Workers) | 100,000 requests/day, 10ms CPU/request. Cron trigger not counted toward request limit. |
+| **Cloudflare D1** | Stores issues, subscribers, and API usage logs | Free | 5M reads/day, 100K writes/day. Well within usage. |
+| **Vercel** | Hosts cloudflash.com including the /fintech landing page and archive | Pro | Unlimited bandwidth on Pro plan. |
 
 ---
 
