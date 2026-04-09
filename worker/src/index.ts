@@ -7,6 +7,7 @@ export interface Env {
   TAVILY_API_KEY: string;
   FINNHUB_API_KEY: string;
   VERCEL_DEPLOY_HOOK: string;
+  ALERT_EMAIL: string;
 }
 
 const TICKERS = ["ALKT", "VYX", "QTWO", "FIS", "FI", "JKHY", "ACIW", "GDOT", "MQ", "NCNO", "UPST"];
@@ -460,12 +461,39 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   console.log("Pipeline complete");
 }
 
+// --- Error alerting ---
+
+async function sendAlert(env: Env, error: unknown): Promise<void> {
+  if (!env.ALERT_EMAIL || !env.RESEND_API_KEY) return;
+  const message = error instanceof Error ? error.message : String(error);
+  const stack = error instanceof Error && error.stack ? `\n\n${error.stack}` : "";
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: "Fintech Briefing <briefing@cloudflash.com>",
+      to: [env.ALERT_EMAIL],
+      subject: `[Cloudflash] Pipeline failure — ${new Date().toISOString()}`,
+      html: `<pre style="font-family:monospace;font-size:13px">${message}${stack}</pre>`,
+    }),
+  });
+}
+
 // --- Worker export ---
 
 export default {
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     console.log("Daily Fintech Briefing cron triggered:", new Date().toISOString());
-    await runPipeline(env);
+    try {
+      await runPipeline(env);
+    } catch (err) {
+      console.error("Pipeline failed:", err);
+      await sendAlert(env, err);
+      throw err;
+    }
   },
 
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -577,6 +605,13 @@ export default {
           headers: { "Content-Type": "application/json" },
         });
       }
+    }
+
+    if (url.pathname === "/api/subscribers/count" && request.method === "GET") {
+      const result = await env.DB
+        .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1")
+        .first<{ count: number }>();
+      return jsonResponse({ count: result?.count ?? 0 });
     }
 
     if (url.pathname === "/api/issues" && request.method === "GET") {
