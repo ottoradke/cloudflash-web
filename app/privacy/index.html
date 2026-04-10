@@ -208,22 +208,22 @@
       </ul>
 
       <h2>Unsubscribing</h2>
-      <p>Every email includes an unsubscribe link in the footer. Clicking it removes you immediately. You can also email <a href="mailto:hello@cloudflash.com">hello@cloudflash.com</a> and we'll remove you manually.</p>
+      <p>Every email includes an unsubscribe link in the footer. Clicking it removes you immediately. You can also email <a id="unsub-email" href="#">hello@cloudflash.com</a> and we'll remove you manually.</p>
 
       <h2>Data retention</h2>
-      <p>When you unsubscribe, your record is marked inactive and retained for 90 days before being purged. This gives you a window to resubscribe without re-entering your email. After 90 days the record is deleted permanently.</p>
+      <p>When you unsubscribe, your record is marked inactive and retained for 90 days before being purged. This allows us to maintain an accurate picture of subscription history. After 90 days the record is deleted permanently.</p>
 
       <h2>Your rights</h2>
-      <p>You can request a copy of the data we hold about you, or ask us to delete it at any time by emailing <a href="mailto:hello@cloudflash.com">hello@cloudflash.com</a>. We'll respond within 30 days.</p>
+      <p>You can request a copy of the data we hold about you, or ask us to delete it at any time by emailing <a id="rights-email" href="#">hello@cloudflash.com</a>. We'll respond within 30 days.</p>
 
       <h2>Cookies</h2>
-      <p>We don't use cookies for tracking or advertising. The admin preview tool stores a preview key in your browser's localStorage — this is a local credential that never leaves your device.</p>
+      <p>We don't use cookies for tracking or advertising.</p>
 
       <h2>Changes</h2>
       <p>If we make material changes to this policy we'll update the date at the top. We won't notify subscribers by email unless the changes are significant.</p>
 
       <h2>Contact</h2>
-      <p><a href="mailto:hello@cloudflash.com">hello@cloudflash.com</a></p>
+      <p><a id="contact-email" href="#">hello@cloudflash.com</a></p>
     </main>
   </div>
 
@@ -232,5 +232,15 @@
     <a href="/" style="color:inherit;text-decoration:none">cloudflash.com</a>
   </footer>
 
+<script>
+  (function() {
+    var e = atob('aGVsbG9AY2xvdWRmbGFzaC5jb20=');
+    var ml = 'mailto:' + e;
+    ['unsub-email', 'rights-email', 'contact-email'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.href = ml; el.textContent = e; }
+    });
+  })();
+</script>
 </body>
 </html>
