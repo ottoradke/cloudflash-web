@@ -1066,8 +1066,8 @@ export default {
       }
 
       const run = await env.DB
-        .prepare("SELECT articles_json FROM pipeline_runs ORDER BY id DESC LIMIT 1")
-        .first<{ articles_json: string }>();
+        .prepare("SELECT articles_json, date FROM pipeline_runs ORDER BY id DESC LIMIT 1")
+        .first<{ articles_json: string; date: string }>();
 
       if (!run?.articles_json) {
         return new Response("No pipeline run found. Run the pipeline at least once first.", {
@@ -1097,8 +1097,9 @@ export default {
         headers: {
           "Content-Type": "text/html",
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Expose-Headers": "X-Preview-ID",
+          "Access-Control-Expose-Headers": "X-Preview-ID, X-Pipeline-Date",
           "X-Preview-ID": String(previewId),
+          "X-Pipeline-Date": run.date,
         },
       });
     }
