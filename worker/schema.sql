@@ -72,3 +72,8 @@ CREATE TABLE IF NOT EXISTS config_tickers (
   ticker_group TEXT NOT NULL DEFAULT '',
   note TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS config_prompt (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  template TEXT NOT NULL
+);

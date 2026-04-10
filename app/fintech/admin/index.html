@@ -988,6 +988,7 @@
             <button class="sub-tab-btn"        data-subtab="vendors" role="tab">Vendor watchlist</button>
             <button class="sub-tab-btn"        data-subtab="sources" role="tab">News sources</button>
             <button class="sub-tab-btn"        data-subtab="tickers" role="tab">Tickers</button>
+            <button class="sub-tab-btn"        data-subtab="prompt"  role="tab">Prompt</button>
             <button class="sub-tab-btn"        data-subtab="all"     role="tab">All</button>
           </nav>
 
@@ -1040,6 +1041,18 @@
               <div id="rows-tickers" class="config-rows"></div>
               <button class="btn-config-add" id="add-tickers">+ Add ticker</button>
               <p class="config-save-status" id="save-status-tickers"></p>
+            </div>
+          </div>
+
+          <div id="subpanel-prompt" class="sub-panel">
+            <div class="config-section">
+              <div class="config-section-header">
+                <h2>Prompt</h2>
+                <button class="btn-config-save" id="save-prompt">Save</button>
+              </div>
+              <p class="config-hint">Use <code>{TOPICS}</code>, <code>{VENDORS}</code>, and <code>{ARTICLES}</code> as placeholders. The JSON format block at the end must be preserved for story parsing to work.</p>
+              <textarea id="prompt-textarea" spellcheck="false" style="width:100%;min-height:320px;margin-top:12px;padding:12px;font-family:monospace;font-size:12px;line-height:1.6;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text);resize:vertical;box-sizing:border-box"></textarea>
+              <p class="config-save-status" id="save-status-prompt"></p>
             </div>
           </div>
 
@@ -1179,6 +1192,7 @@
         cfg.vendors = data.vendors || [];
         cfg.sources = data.sources || [];
         cfg.tickers = data.tickers || [];
+        document.getElementById('prompt-textarea').value = data.prompt || '';
 
         applyUnlocked();
       } catch {
@@ -1532,6 +1546,7 @@
           cfg.vendors = data.vendors || [];
           cfg.sources = data.sources || [];
           cfg.tickers = data.tickers || [];
+          if (data.prompt) document.getElementById('prompt-textarea').value = data.prompt;
           renderAll();
         }
       } catch {
@@ -1540,6 +1555,36 @@
         saveBtn.classList.add('dirty');
       }
     }
+
+    document.getElementById('save-prompt').addEventListener('click', async () => {
+      const saveBtn    = document.getElementById('save-prompt');
+      const saveStatus = document.getElementById('save-status-prompt');
+      const template   = document.getElementById('prompt-textarea').value;
+
+      saveBtn.classList.remove('dirty');
+      saveStatus.textContent = 'Saving…';
+      saveStatus.className   = 'config-save-status';
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/api/config/prompt?key=${encodeURIComponent(authKey)}`, {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ template }),
+        });
+        if (res.status === 401) { saveStatus.textContent = 'Invalid key.'; saveStatus.className = 'config-save-status error'; return; }
+        if (!res.ok)            { saveStatus.textContent = 'Save failed. Try again.'; saveStatus.className = 'config-save-status error'; return; }
+        saveStatus.textContent = 'Saved.';
+        saveStatus.className   = 'config-save-status success';
+        setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+      } catch {
+        saveStatus.textContent = 'Request failed.';
+        saveStatus.className   = 'config-save-status error';
+      }
+    });
+
+    document.getElementById('prompt-textarea').addEventListener('input', () => {
+      document.getElementById('save-prompt').classList.add('dirty');
+    });
 
     // ── Subscribers tab ──────────────────────────────────────────
     (function () {

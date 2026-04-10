@@ -50,20 +50,23 @@ interface Config {
   vendors: ConfigVendor[];
   sources: ConfigSource[];
   tickers: ConfigTicker[];
+  prompt: string;
 }
 
 async function loadConfig(db: D1Database): Promise<Config> {
-  const [topics, vendors, sources, tickers] = await Promise.all([
+  const [topics, vendors, sources, tickers, promptRow] = await Promise.all([
     db.prepare("SELECT id, order_pos, name, note FROM config_topics ORDER BY order_pos ASC").all<ConfigTopic>(),
     db.prepare("SELECT id, order_pos, name, note FROM config_vendors ORDER BY order_pos ASC").all<ConfigVendor>(),
     db.prepare("SELECT id, order_pos, name, domain, query, note FROM config_sources ORDER BY order_pos ASC").all<ConfigSource>(),
     db.prepare("SELECT id, order_pos, symbol, name, ticker_group AS 'group', note FROM config_tickers ORDER BY order_pos ASC").all<ConfigTicker>(),
+    db.prepare("SELECT template FROM config_prompt WHERE id = 1").first<{ template: string }>(),
   ]);
   return {
     topics: topics.results,
     vendors: vendors.results,
     sources: sources.results,
     tickers: tickers.results,
+    prompt: promptRow?.template ?? DEFAULT_PROMPT,
   };
 }
 
@@ -81,15 +84,12 @@ function buildTickerNamesFromConfig(tickers: ConfigTicker[]): Record<string, str
   return Object.fromEntries(tickers.map((t) => [t.symbol, t.name || t.symbol]));
 }
 
-function buildPrompt(topics: ConfigTopic[], vendors: ConfigVendor[]): string {
-  const topicList = topics.map((t, i) => `${i + 1}. ${t.name}`).join("\n");
-  const vendorList = vendors.map((v) => v.name).join(", ");
-  return `You are writing The Daily Fintech Briefing — a weekday AI-generated email newsletter in the style of a senior fintech analyst writing to a trusted colleague. Conversational and personal in voice — write as if you have a point of view, not just a summary. Each story should include thoughtful analysis of what the news actually means for banks, vendors, or the industry, and where relevant, a strategic observation about what it signals or what comes next. Dry wit is welcome but secondary to genuine insight.
+const DEFAULT_PROMPT = `You are writing The Daily Fintech Briefing — a weekday AI-generated email newsletter in the style of a senior fintech analyst writing to a trusted colleague. Conversational and personal in voice — write as if you have a point of view, not just a summary. Each story should include thoughtful analysis of what the news actually means for banks, vendors, or the industry, and where relevant, a strategic observation about what it signals or what comes next. Dry wit is welcome but secondary to genuine insight.
 
 Below is a collection of fintech news articles gathered this morning. Select and write exactly 10 stories, prioritized in this order:
-${topicList}
+{TOPICS}
 
-Stories involving these vendors should be bumped ahead of generic stories on the same topic: ${vendorList}.
+Stories involving these vendors should be bumped ahead of generic stories on the same topic: {VENDORS}.
 
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
@@ -105,6 +105,13 @@ Use the exact URL from the article for the "url" field.
 Here are today's articles:
 
 {ARTICLES}`;
+
+function buildPrompt(template: string, topics: ConfigTopic[], vendors: ConfigVendor[]): string {
+  const topicList  = topics.map((t, i) => `${i + 1}. ${t.name}`).join("\n");
+  const vendorList = vendors.map((v) => v.name).join(", ");
+  return template
+    .replace("{TOPICS}",  topicList)
+    .replace("{VENDORS}", vendorList);
 }
 
 // --- API usage logging ---
@@ -229,6 +236,7 @@ async function generateStories(
   vendors: ConfigVendor[],
   anthropicKey: string,
   db: D1Database,
+  promptTemplate = DEFAULT_PROMPT,
   attempt = 1
 ): Promise<Story[]> {
   const articleText = articles
@@ -238,7 +246,7 @@ async function generateStories(
     )
     .join("\n\n---\n\n");
 
-  const prompt = buildPrompt(topics, vendors).replace("{ARTICLES}", articleText);
+  const prompt = buildPrompt(promptTemplate, topics, vendors).replace("{ARTICLES}", articleText);
 
   const anthropicStart = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -280,7 +288,7 @@ async function generateStories(
   } catch (err) {
     if (attempt < 3) {
       console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
-      return generateStories(articles, topics, vendors, anthropicKey, db, attempt + 1);
+      return generateStories(articles, topics, vendors, anthropicKey, db, promptTemplate, attempt + 1);
     }
     throw err;
   }
@@ -554,7 +562,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const runId = await savePipelineRun(env.DB, dateISO, articles);
 
   console.log("Generating stories with Claude...");
-  const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB);
+  const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt);
   console.log(`Generated ${stories.length} stories`);
 
   await updatePipelineRunStories(env.DB, runId, stories);
@@ -1078,7 +1086,7 @@ export default {
 
       const articles = JSON.parse(run.articles_json) as TavilyResult[];
       const config = await loadConfig(env.DB);
-      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB);
+      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt);
 
       const now = new Date();
       const date = now.toLocaleDateString("en-US", {
@@ -1166,6 +1174,15 @@ export default {
           .bind(row.order_pos, row.symbol, row.name ?? "", row.group ?? "", row.note ?? "").run();
       }
       return jsonResponse({ status: "ok", count: rows.length });
+    }
+
+    if (url.pathname === "/api/config/prompt" && request.method === "PUT") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const { template } = await request.json() as { template: string };
+      await env.DB.prepare("INSERT INTO config_prompt (id, template) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET template = excluded.template")
+        .bind(template).run();
+      return jsonResponse({ status: "ok" });
     }
 
     if (url.pathname === "/api/pipeline/runs" && request.method === "GET") {
