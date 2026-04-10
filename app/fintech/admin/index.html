@@ -323,63 +323,190 @@
 
     .logs-loading { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 
-    .ref-section { margin-top: 56px; }
+    .config-section { margin-top: 56px; }
 
-    .ref-section h2 {
+    .config-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .config-section-header h2 {
       font-size: 1rem;
       font-weight: 500;
-      margin-bottom: 20px;
     }
 
-    .ref-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-
-    .ref-table th {
-      text-align: left;
-      font-size: 0.7rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+    .config-hint {
+      font-size: 0.75rem;
       color: var(--muted);
-      padding: 0 12px 10px 0;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
     }
 
-    .ref-table td {
-      padding: 10px 12px 10px 0;
+    .config-locked {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 12px 0;
+    }
+
+    .config-rows { display: flex; flex-direction: column; }
+
+    .config-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
       border-bottom: 1px solid rgba(255,255,255,0.07);
-      color: rgba(255,255,255,0.85);
-      vertical-align: top;
     }
 
-    .ref-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+    .config-row:first-child { border-top: 1px solid rgba(255,255,255,0.07); }
 
-    .ref-table code {
-      font-family: monospace;
+    .move-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex-shrink: 0;
+    }
+
+    .btn-move {
+      width: 20px;
+      height: 15px;
+      padding: 0;
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      font-size: 0.6rem;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-move:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: var(--text); }
+    .btn-move:disabled { opacity: 0.2; cursor: not-allowed; }
+
+    .row-fields {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .row-fields input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      padding: 5px 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      min-width: 0;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .row-fields input:hover { background: rgba(255,255,255,0.06); border-color: var(--border); }
+    .row-fields input:focus { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.35); }
+
+    .field-name { flex: 2; font-size: 0.82rem; }
+
+    .field-note {
+      flex: 1;
       font-size: 0.78rem;
       color: var(--muted);
     }
 
-    .vendor-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px 16px;
-      margin-top: 4px;
+    .field-note::placeholder { color: rgba(255,255,255,0.22); }
+    .field-note:focus { color: var(--text); }
+
+    .field-domain {
+      flex: 1;
+      font-size: 0.78rem;
+      font-family: monospace !important;
+      color: rgba(255,255,255,0.75);
     }
 
-    .vendor-chip {
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.85);
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+    .field-query {
+      flex: 2;
+      font-size: 0.78rem;
+      font-family: monospace !important;
+      color: rgba(255,255,255,0.75);
     }
+
+    .btn-delete-row {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.25);
+      border: none;
+      font-size: 1rem;
+      line-height: 1;
+      border-radius: 4px;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-delete-row:hover { background: rgba(255,80,80,0.2); color: #ffaaaa; }
+
+    .btn-config-save {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: not-allowed;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-config-save.dirty {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+      border-color: transparent;
+      cursor: pointer;
+    }
+
+    .btn-config-save.dirty:hover { background: #fff; }
+
+    .btn-config-add {
+      margin-top: 8px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 7px 16px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .btn-config-add:hover { background: rgba(255,255,255,0.06); color: var(--text); border-color: rgba(255,255,255,0.35); }
+
+    .config-save-status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      margin-top: 6px;
+    }
+
+    .config-save-status.error { color: #ffaaaa; }
+    .config-save-status.success { color: rgba(100,220,140,0.85); }
 
     @media (max-width: 600px) {
       .logs-cards { grid-template-columns: repeat(2, 1fr); }
-      .vendor-grid { grid-template-columns: repeat(2, 1fr); }
+      .field-domain, .field-note { display: none; }
     }
 
     footer {
@@ -445,7 +572,7 @@
         <div class="next-run-items">
           <div class="next-run-item">
             <span class="next-run-service">Tavily</span>
-            <span class="next-run-count" id="nr-tavily">6</span>
+            <span class="next-run-count" id="nr-tavily">—</span>
           </div>
           <div class="next-run-item">
             <span class="next-run-service">Anthropic</span>
@@ -502,81 +629,43 @@
         </div>
       </div>
 
-      <div class="ref-section">
-        <h2>Story topics</h2>
-        <table class="ref-table">
-          <thead>
-            <tr><th>#</th><th>Topic</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>1</td><td>AI in banking and financial services</td></tr>
-            <tr><td>2</td><td>Bank technology and digital banking</td></tr>
-            <tr><td>3</td><td>M&amp;A for banks and credit unions</td></tr>
-            <tr><td>4</td><td>Credit union consolidation</td></tr>
-            <tr><td>5</td><td>Core banking modernization</td></tr>
-            <tr><td>6</td><td>Bank middleware and infrastructure</td></tr>
-            <tr><td>7</td><td>Payments modernization (ISO 20022, FedNow, real-time rails)</td></tr>
-            <tr><td>8</td><td>Fraud technology in fintech</td></tr>
-            <tr><td>9</td><td>Core banking vendors (FIS, Fiserv, Jack Henry, Temenos, nCino, etc.)</td></tr>
-            <tr><td>10</td><td>Banking regulation</td></tr>
-            <tr><td>11</td><td>Embedded finance</td></tr>
-            <tr><td>12</td><td>Banking-as-a-Service (BaaS) and regulatory developments</td></tr>
-            <tr><td>13</td><td>Vendor risk and third-party oversight</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="ref-section">
-        <h2>Vendor watchlist</h2>
-        <div class="vendor-grid">
-          <div class="vendor-chip">Q2</div>
-          <div class="vendor-chip">Alkami</div>
-          <div class="vendor-chip">Apiture</div>
-          <div class="vendor-chip">Backbase</div>
-          <div class="vendor-chip">FIS</div>
-          <div class="vendor-chip">Fiserv</div>
-          <div class="vendor-chip">Jack Henry</div>
-          <div class="vendor-chip">Temenos</div>
-          <div class="vendor-chip">Thought Machine</div>
-          <div class="vendor-chip">Mambu</div>
-          <div class="vendor-chip">nCino</div>
-          <div class="vendor-chip">Blend</div>
-          <div class="vendor-chip">Upstart</div>
-          <div class="vendor-chip">Marqeta</div>
-          <div class="vendor-chip">Galileo</div>
-          <div class="vendor-chip">ACI Worldwide</div>
-          <div class="vendor-chip">Volante</div>
-          <div class="vendor-chip">Alloy</div>
-          <div class="vendor-chip">Sardine</div>
-          <div class="vendor-chip">Feedzai</div>
-          <div class="vendor-chip">Socure</div>
-          <div class="vendor-chip">Unit</div>
-          <div class="vendor-chip">Treasury Prime</div>
-          <div class="vendor-chip">Synctera</div>
-          <div class="vendor-chip">Candescent</div>
-          <div class="vendor-chip">Banno</div>
-          <div class="vendor-chip">Lumen Digital</div>
-          <div class="vendor-chip">Bottomline</div>
-          <div class="vendor-chip">Kony</div>
-          <div class="vendor-chip">Nymbus</div>
+      <div class="config-section" id="section-topics">
+        <div class="config-section-header">
+          <h2>Story topics</h2>
+          <button class="btn-config-save" id="save-topics">Save</button>
         </div>
+        <p class="config-hint">Order determines Claude's story priority — top topics rank first.</p>
+        <div id="rows-topics" class="config-rows">
+          <p class="config-locked">Loading…</p>
+        </div>
+        <button class="btn-config-add" id="add-topics" style="display:none">+ Add topic</button>
+        <p class="config-save-status" id="save-status-topics"></p>
       </div>
 
-      <div class="ref-section">
-        <h2>News sources</h2>
-        <table class="ref-table">
-          <thead>
-            <tr><th>Source</th><th>Domain</th><th>Query</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>PYMNTS</td><td>pymnts.com</td><td><code>site:pymnts.com fintech banking</code></td></tr>
-            <tr><td>Finextra</td><td>finextra.com</td><td><code>site:finextra.com fintech banking</code></td></tr>
-            <tr><td>American Banker</td><td>americanbanker.com</td><td><code>site:americanbanker.com fintech banking</code></td></tr>
-            <tr><td>Reuters</td><td>reuters.com</td><td><code>fintech banking</code></td></tr>
-            <tr><td>Bloomberg</td><td>bloomberg.com</td><td><code>fintech banking technology</code></td></tr>
-            <tr><td>Bloomberg Money Stuff</td><td>bloomberg.com</td><td><code>Matt Levine Money Stuff</code></td></tr>
-          </tbody>
-        </table>
+      <div class="config-section" id="section-vendors">
+        <div class="config-section-header">
+          <h2>Vendor watchlist</h2>
+          <button class="btn-config-save" id="save-vendors">Save</button>
+        </div>
+        <p class="config-hint">Custom sort — cosmetic only. Notes are admin-only, not passed to Claude.</p>
+        <div id="rows-vendors" class="config-rows">
+          <p class="config-locked">Loading…</p>
+        </div>
+        <button class="btn-config-add" id="add-vendors" style="display:none">+ Add vendor</button>
+        <p class="config-save-status" id="save-status-vendors"></p>
+      </div>
+
+      <div class="config-section" id="section-sources">
+        <div class="config-section-header">
+          <h2>News sources</h2>
+          <button class="btn-config-save" id="save-sources">Save</button>
+        </div>
+        <p class="config-hint">Tavily fetches from each source daily. Order is cosmetic.</p>
+        <div id="rows-sources" class="config-rows">
+          <p class="config-locked">Loading…</p>
+        </div>
+        <button class="btn-config-add" id="add-sources" style="display:none">+ Add source</button>
+        <p class="config-save-status" id="save-status-sources"></p>
       </div>
 
     </main>
@@ -715,6 +804,203 @@
         }
       })
       .catch(() => {});
+  </script>
+
+  <script>
+    (function () {
+      const cfg = { topics: [], vendors: [], sources: [] };
+      const dirty = { topics: false, vendors: false, sources: false };
+
+      // ── Render ────────────────────────────────────────────────
+      function renderSection(section) {
+        const container = document.getElementById(`rows-${section}`);
+        const addBtn    = document.getElementById(`add-${section}`);
+        const items     = cfg[section];
+        container.innerHTML = '';
+        items.forEach((item, i) => {
+          container.appendChild(makeRow(section, item, i, items.length));
+        });
+        addBtn.style.display = '';
+        if (section === 'sources') {
+          document.getElementById('nr-tavily').textContent = items.length || '—';
+        }
+      }
+
+      function renderAll() {
+        renderSection('topics');
+        renderSection('vendors');
+        renderSection('sources');
+      }
+
+      // ── Row builder ───────────────────────────────────────────
+      function makeRow(section, item, idx, total) {
+        const row = document.createElement('div');
+        row.className = 'config-row';
+
+        // Move buttons
+        const moveBtns = document.createElement('div');
+        moveBtns.className = 'move-btns';
+        ['↑', '↓'].forEach((arrow, dir) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn-move';
+          btn.textContent = arrow;
+          btn.title = dir === 0 ? 'Move up' : 'Move down';
+          btn.disabled = dir === 0 ? idx === 0 : idx === total - 1;
+          btn.addEventListener('click', () => move(section, idx, dir === 0 ? -1 : 1));
+          moveBtns.appendChild(btn);
+        });
+        row.appendChild(moveBtns);
+
+        // Fields
+        const rowFields = document.createElement('div');
+        rowFields.className = 'row-fields';
+
+        const fields = section === 'sources'
+          ? [['name', 'flex:1.5', 'Source name'], ['domain', 'flex:1', 'domain.com'], ['query', 'flex:2', 'Search query'], ['note', 'flex:1', 'Note (admin only)']]
+          : [['name', 'flex:2', null], ['note', 'flex:1', 'Note (admin only)']];
+
+        fields.forEach(([field, flexStyle, placeholder]) => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = `field-${field}`;
+          input.value = item[field] || '';
+          if (placeholder) input.placeholder = placeholder;
+          if (flexStyle) input.style.flex = flexStyle.replace('flex:', '').trim();
+          input.addEventListener('input', () => {
+            item[field] = input.value;
+            markDirty(section);
+          });
+          rowFields.appendChild(input);
+        });
+
+        row.appendChild(rowFields);
+
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-delete-row';
+        delBtn.textContent = '×';
+        delBtn.title = 'Delete row';
+        delBtn.addEventListener('click', () => {
+          cfg[section].splice(idx, 1);
+          markDirty(section);
+          renderSection(section);
+        });
+        row.appendChild(delBtn);
+
+        return row;
+      }
+
+      // ── Move ──────────────────────────────────────────────────
+      function move(section, idx, dir) {
+        const arr = cfg[section];
+        const newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= arr.length) return;
+        [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+        markDirty(section);
+        renderSection(section);
+      }
+
+      // ── Add row ───────────────────────────────────────────────
+      ['topics', 'vendors', 'sources'].forEach(section => {
+        document.getElementById(`add-${section}`).addEventListener('click', () => {
+          const base = { id: null, order_pos: cfg[section].length + 1, name: '', note: '' };
+          if (section === 'sources') { base.domain = ''; base.query = ''; }
+          cfg[section].push(base);
+          markDirty(section);
+          renderSection(section);
+          // Focus the name field of the new row
+          const rows = document.getElementById(`rows-${section}`).querySelectorAll('.config-row');
+          const lastRow = rows[rows.length - 1];
+          if (lastRow) lastRow.querySelector('.field-name')?.focus();
+        });
+      });
+
+      // ── Dirty state ───────────────────────────────────────────
+      function markDirty(section) {
+        dirty[section] = true;
+        const btn = document.getElementById(`save-${section}`);
+        btn.classList.add('dirty');
+      }
+
+      // ── Save ──────────────────────────────────────────────────
+      ['topics', 'vendors', 'sources'].forEach(section => {
+        document.getElementById(`save-${section}`).addEventListener('click', () => saveSection(section));
+      });
+
+      async function saveSection(section) {
+        const key = document.getElementById('key-input').value.trim();
+        const saveBtn    = document.getElementById(`save-${section}`);
+        const saveStatus = document.getElementById(`save-status-${section}`);
+
+        if (!key) {
+          saveStatus.textContent = 'Enter your preview key first.';
+          saveStatus.className   = 'config-save-status error';
+          return;
+        }
+
+        saveBtn.classList.remove('dirty');
+        saveBtn.style.cursor = 'not-allowed';
+        saveStatus.textContent = 'Saving…';
+        saveStatus.className   = 'config-save-status';
+
+        const items = cfg[section].map((item, i) => ({ ...item, order_pos: i + 1 }));
+
+        try {
+          const res = await fetch(`https://api.cloudflash.com/api/config/${section}?key=${encodeURIComponent(key)}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(items),
+          });
+
+          if (res.status === 401) {
+            saveStatus.textContent = 'Invalid key.';
+            saveStatus.className   = 'config-save-status error';
+            saveBtn.classList.add('dirty');
+            return;
+          }
+          if (!res.ok) {
+            saveStatus.textContent = 'Save failed. Try again.';
+            saveStatus.className   = 'config-save-status error';
+            saveBtn.classList.add('dirty');
+            return;
+          }
+
+          dirty[section] = false;
+          saveStatus.textContent = 'Saved.';
+          saveStatus.className   = 'config-save-status success';
+          setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+
+          // Reload to get fresh IDs from D1
+          await loadConfig();
+        } catch {
+          saveStatus.textContent = 'Request failed. Check your connection.';
+          saveStatus.className   = 'config-save-status error';
+          saveBtn.classList.add('dirty');
+        } finally {
+          saveBtn.style.cursor = '';
+        }
+      }
+
+      // ── Load ──────────────────────────────────────────────────
+      async function loadConfig() {
+        try {
+          const res = await fetch('https://api.cloudflash.com/api/config');
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          cfg.topics  = data.topics  || [];
+          cfg.vendors = data.vendors || [];
+          cfg.sources = data.sources || [];
+          renderAll();
+        } catch {
+          ['topics', 'vendors', 'sources'].forEach(section => {
+            const container = document.getElementById(`rows-${section}`);
+            container.innerHTML = '<p class="config-locked">Failed to load config.</p>';
+          });
+        }
+      }
+
+      loadConfig();
+    })();
   </script>
 
   <script>

@@ -20,33 +20,59 @@ const TICKER_GROUPS: Record<string, string[]> = {
   "AI & Lending": ["NCNO", "UPST"],
 };
 
-const NEWS_SOURCES = [
-  { name: "PYMNTS", domain: "pymnts.com" },
-  { name: "Finextra", domain: "finextra.com" },
-  { name: "American Banker", domain: "americanbanker.com" },
-  { name: "Reuters", domain: "reuters.com", query: "fintech banking" },
-  { name: "Bloomberg", domain: "bloomberg.com", query: "fintech banking technology" },
-  { name: "Bloomberg Money Stuff", domain: "bloomberg.com", query: "Matt Levine Money Stuff" },
-];
+// --- Config types ---
 
-const STORY_PROMPT = `You are writing The Daily Fintech Briefing — a weekday AI-generated email newsletter in the style of a senior fintech analyst writing to a trusted colleague. Conversational and personal in voice — write as if you have a point of view, not just a summary. Each story should include thoughtful analysis of what the news actually means for banks, vendors, or the industry, and where relevant, a strategic observation about what it signals or what comes next. Dry wit is welcome but secondary to genuine insight.
+interface ConfigTopic {
+  id: number;
+  order_pos: number;
+  name: string;
+  note: string;
+}
+
+interface ConfigVendor {
+  id: number;
+  order_pos: number;
+  name: string;
+  note: string;
+}
+
+interface ConfigSource {
+  id: number;
+  order_pos: number;
+  name: string;
+  domain: string;
+  query: string;
+  note: string;
+}
+
+interface Config {
+  topics: ConfigTopic[];
+  vendors: ConfigVendor[];
+  sources: ConfigSource[];
+}
+
+async function loadConfig(db: D1Database): Promise<Config> {
+  const [topics, vendors, sources] = await Promise.all([
+    db.prepare("SELECT id, order_pos, name, note FROM config_topics ORDER BY order_pos ASC").all<ConfigTopic>(),
+    db.prepare("SELECT id, order_pos, name, note FROM config_vendors ORDER BY order_pos ASC").all<ConfigVendor>(),
+    db.prepare("SELECT id, order_pos, name, domain, query, note FROM config_sources ORDER BY order_pos ASC").all<ConfigSource>(),
+  ]);
+  return {
+    topics: topics.results,
+    vendors: vendors.results,
+    sources: sources.results,
+  };
+}
+
+function buildPrompt(topics: ConfigTopic[], vendors: ConfigVendor[]): string {
+  const topicList = topics.map((t, i) => `${i + 1}. ${t.name}`).join("\n");
+  const vendorList = vendors.map((v) => v.name).join(", ");
+  return `You are writing The Daily Fintech Briefing — a weekday AI-generated email newsletter in the style of a senior fintech analyst writing to a trusted colleague. Conversational and personal in voice — write as if you have a point of view, not just a summary. Each story should include thoughtful analysis of what the news actually means for banks, vendors, or the industry, and where relevant, a strategic observation about what it signals or what comes next. Dry wit is welcome but secondary to genuine insight.
 
 Below is a collection of fintech news articles gathered this morning. Select and write exactly 10 stories, prioritized in this order:
-1. AI in banking and financial services
-2. Bank technology and digital banking
-3. M&A for banks and credit unions
-4. Credit union consolidation
-5. Core banking modernization
-6. Bank middleware and infrastructure
-7. Payments modernization (ISO 20022, FedNow, real-time rails)
-8. Fraud technology in fintech
-9. Core banking vendors (FIS, Fiserv, Jack Henry, Temenos, nCino, etc.)
-10. Banking regulation
-11. Embedded finance
-12. Banking-as-a-Service (BaaS) and regulatory developments
-13. Vendor risk and third-party oversight
+${topicList}
 
-Stories involving these vendors should be bumped ahead of generic stories on the same topic: Q2, Alkami, Apiture, Backbase, FIS, Fiserv, Jack Henry, Temenos, Thought Machine, Mambu, nCino, Blend, Upstart, Marqeta, Galileo, ACI Worldwide, Volante, Alloy, Sardine, Feedzai, Socure, Unit, Treasury Prime, Synctera, Candescent, Banno, Lumen Digital, Bottomline, Kony, Nymbus.
+Stories involving these vendors should be bumped ahead of generic stories on the same topic: ${vendorList}.
 
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
@@ -62,6 +88,7 @@ Use the exact URL from the article for the "url" field.
 Here are today's articles:
 
 {ARTICLES}`;
+}
 
 // --- API usage logging ---
 
@@ -87,13 +114,11 @@ interface TavilyResult {
 }
 
 async function fetchNewsFromSource(
-  source: (typeof NEWS_SOURCES)[0],
+  source: ConfigSource,
   tavilyKey: string,
   db: D1Database
 ): Promise<TavilyResult[]> {
-  const query = source.query
-    ? source.query
-    : `site:${source.domain} fintech banking`;
+  const query = source.query || `site:${source.domain} fintech banking`;
 
   const tavilyStart = Date.now();
   const res = await fetch("https://api.tavily.com/search", {
@@ -124,9 +149,9 @@ async function fetchNewsFromSource(
   return (data.results || []).map((r) => ({ ...r, source: source.name }));
 }
 
-async function fetchAllNews(tavilyKey: string, db: D1Database): Promise<TavilyResult[]> {
+async function fetchAllNews(sources: ConfigSource[], tavilyKey: string, db: D1Database): Promise<TavilyResult[]> {
   const results = await Promise.all(
-    NEWS_SOURCES.map((s) => fetchNewsFromSource(s, tavilyKey, db))
+    sources.map((s) => fetchNewsFromSource(s, tavilyKey, db))
   );
   return results.flat();
 }
@@ -182,6 +207,8 @@ async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerD
 
 async function generateStories(
   articles: TavilyResult[],
+  topics: ConfigTopic[],
+  vendors: ConfigVendor[],
   anthropicKey: string,
   db: D1Database,
   attempt = 1
@@ -193,7 +220,7 @@ async function generateStories(
     )
     .join("\n\n---\n\n");
 
-  const prompt = STORY_PROMPT.replace("{ARTICLES}", articleText);
+  const prompt = buildPrompt(topics, vendors).replace("{ARTICLES}", articleText);
 
   const anthropicStart = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -235,7 +262,7 @@ async function generateStories(
   } catch (err) {
     if (attempt < 3) {
       console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
-      return generateStories(articles, anthropicKey, db, attempt + 1);
+      return generateStories(articles, topics, vendors, anthropicKey, db, attempt + 1);
     }
     throw err;
   }
@@ -495,8 +522,10 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
     return;
   }
 
+  const config = await loadConfig(env.DB);
+
   console.log("Fetching news...");
-  const articles = await fetchAllNews(env.TAVILY_API_KEY, env.DB);
+  const articles = await fetchAllNews(config.sources, env.TAVILY_API_KEY, env.DB);
   console.log(`Fetched ${articles.length} articles`);
 
   console.log("Fetching tickers...");
@@ -507,7 +536,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const runId = await savePipelineRun(env.DB, dateISO, articles);
 
   console.log("Generating stories with Claude...");
-  const stories = await generateStories(articles, env.ANTHROPIC_API_KEY, env.DB);
+  const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB);
   console.log(`Generated ${stories.length} stories`);
 
   await updatePipelineRunStories(env.DB, runId, stories);
@@ -948,7 +977,8 @@ export default {
       const now = new Date();
       const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
 
-      const articles = await fetchAllNews(env.TAVILY_API_KEY, env.DB);
+      const config = await loadConfig(env.DB);
+      const articles = await fetchAllNews(config.sources, env.TAVILY_API_KEY, env.DB);
       await savePipelineRun(env.DB, dateISO, articles);
 
       return jsonResponse({ status: "ok", articles: articles.length, date: dateISO });
@@ -998,7 +1028,8 @@ export default {
       }
 
       const articles = JSON.parse(run.articles_json) as TavilyResult[];
-      const stories = await generateStories(articles, env.ANTHROPIC_API_KEY, env.DB);
+      const config = await loadConfig(env.DB);
+      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB);
 
       const now = new Date();
       const date = now.toLocaleDateString("en-US", {
@@ -1064,6 +1095,47 @@ export default {
 
       await logApi(env.DB, "resend", true, { duration_ms: resendDuration });
       return jsonResponse({ status: "sent", to });
+    }
+
+    if (url.pathname === "/api/config" && request.method === "GET") {
+      const config = await loadConfig(env.DB);
+      return jsonResponse(config);
+    }
+
+    if (url.pathname === "/api/config/topics" && request.method === "PUT") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const rows = await request.json() as Array<{ order_pos: number; name: string; note: string }>;
+      await env.DB.prepare("DELETE FROM config_topics").run();
+      for (const row of rows) {
+        await env.DB.prepare("INSERT INTO config_topics (order_pos, name, note) VALUES (?, ?, ?)")
+          .bind(row.order_pos, row.name, row.note ?? "").run();
+      }
+      return jsonResponse({ status: "ok", count: rows.length });
+    }
+
+    if (url.pathname === "/api/config/vendors" && request.method === "PUT") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const rows = await request.json() as Array<{ order_pos: number; name: string; note: string }>;
+      await env.DB.prepare("DELETE FROM config_vendors").run();
+      for (const row of rows) {
+        await env.DB.prepare("INSERT INTO config_vendors (order_pos, name, note) VALUES (?, ?, ?)")
+          .bind(row.order_pos, row.name, row.note ?? "").run();
+      }
+      return jsonResponse({ status: "ok", count: rows.length });
+    }
+
+    if (url.pathname === "/api/config/sources" && request.method === "PUT") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const rows = await request.json() as Array<{ order_pos: number; name: string; domain: string; query: string; note: string }>;
+      await env.DB.prepare("DELETE FROM config_sources").run();
+      for (const row of rows) {
+        await env.DB.prepare("INSERT INTO config_sources (order_pos, name, domain, query, note) VALUES (?, ?, ?, ?, ?)")
+          .bind(row.order_pos, row.name, row.domain, row.query, row.note ?? "").run();
+      }
+      return jsonResponse({ status: "ok", count: rows.length });
     }
 
     return new Response("Not Found", { status: 404 });
