@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Preview — The Daily Fintech Briefing</title>
+  <title>Admin — The Daily Fintech Briefing</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,12 +39,12 @@
       flex-direction: column;
     }
 
+    /* ── Header ─────────────────────────────────────────── */
     header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 36px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 36px 0 0;
+      gap: 16px;
       opacity: 0;
       animation: fadeUp 0.5s ease forwards 0.1s;
     }
@@ -60,6 +60,7 @@
       gap: 10px;
       font-size: 0.95rem;
       font-weight: 500;
+      flex-shrink: 0;
     }
 
     .logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
@@ -68,40 +69,195 @@
     .logo-sep { color: var(--border); font-weight: 300; margin: 0 2px; }
     .logo-product { font-weight: 400; color: var(--muted); }
 
+    .header-auth {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .unlock-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .unlock-form input {
+      width: 130px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .unlock-form input::placeholder { color: rgba(255,255,255,0.35); }
+    .unlock-form input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.14); }
+
+    .btn-unlock {
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.15);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .btn-unlock:hover { background: rgba(255,255,255,0.22); }
+
+    .unlock-error {
+      font-size: 0.75rem;
+      color: #ffaaaa;
+      white-space: nowrap;
+    }
+
+    .unlocked-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .unlocked-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(100,220,140,0.9);
+      flex-shrink: 0;
+    }
+
+    .btn-lock {
+      padding: 4px 10px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .btn-lock:hover { color: var(--text); }
+
     .back-link {
       font-size: 0.78rem;
       color: var(--muted);
       text-decoration: none;
+      flex-shrink: 0;
       transition: color 0.15s;
     }
+
     .back-link:hover { color: var(--text); }
 
-    main { padding: 40px 0 60px; flex: 1; }
+    /* ── Tab nav ─────────────────────────────────────────── */
+    .tab-nav {
+      display: flex;
+      padding-top: 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
 
-    .eyebrow {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+    .tab-btn {
+      padding: 10px 18px;
+      background: transparent;
       color: var(--muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-size: 0.82rem;
       font-weight: 500;
-      margin-bottom: 20px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.15s;
     }
 
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 300;
-      letter-spacing: -0.02em;
-      margin-bottom: 32px;
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      color: var(--text);
+      border-bottom-color: rgba(255,255,255,0.8);
     }
 
-    .key-row, .send-row {
+    /* ── Main / panels ───────────────────────────────────── */
+    main { flex: 1; padding-bottom: 60px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .tab-lock {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* ── Shared buttons ──────────────────────────────────── */
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: #fff; }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85);
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      margin-bottom: 16px;
+    }
+
+    .status.error { color: #ffaaaa; }
+
+    /* ── Preview tab ─────────────────────────────────────── */
+    .send-row {
       display: flex;
       gap: 10px;
       max-width: 480px;
-      margin-bottom: 32px;
+      margin-bottom: 16px;
     }
 
-    .key-row input, .send-row input {
+    .send-row input {
       flex: 1;
       background: rgba(255,255,255,0.12);
       border: 1px solid var(--border);
@@ -113,55 +269,8 @@
       outline: none;
     }
 
-    .key-row input::placeholder, .send-row input::placeholder { color: rgba(255,255,255,0.4); }
-    .key-row input:focus, .send-row input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.16); }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: background 0.15s, opacity 0.15s;
-    }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .btn-mock {
-      background: rgba(255,255,255,0.95);
-      color: #1a5fa8;
-    }
-    .btn-mock:hover { background: #fff; }
-
-    .btn-fetch {
-      background: rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.85);
-      border: 1px solid rgba(255,255,255,0.35);
-    }
-    .btn-fetch:hover { background: rgba(255,255,255,0.22); }
-
-    .btn-live {
-      background: rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.85);
-      border: 1px solid rgba(255,255,255,0.35);
-    }
-    .btn-live:hover { background: rgba(255,255,255,0.22); }
-
-    .status {
-      font-size: 0.82rem;
-      color: var(--muted);
-      min-height: 1.2em;
-      margin-bottom: 24px;
-    }
-
-    .status.error { color: #ffaaaa; }
+    .send-row input::placeholder { color: rgba(255,255,255,0.4); }
+    .send-row input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.16); }
 
     .preview-wrap {
       background: #f0f0f0;
@@ -178,14 +287,61 @@
       min-height: 400px;
     }
 
+    /* ── Pipeline tab ────────────────────────────────────── */
+    .pipeline-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      margin-bottom: 16px;
+    }
+
+    .run-history { margin-top: 40px; }
+
+    .run-history h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .run-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .run-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 20px 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .run-table td {
+      padding: 10px 20px 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+    }
+
+    .run-table td:first-child { color: var(--text); font-weight: 500; }
+
+    .run-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 20px 0;
+    }
+
+    /* ── Stats tab ───────────────────────────────────────── */
     .next-run-card {
       display: flex;
       align-items: center;
-      gap: 0;
       background: rgba(255,255,255,0.06);
       border: 1px solid var(--border);
       border-radius: 6px;
-      margin-top: 56px;
+      margin-bottom: 40px;
       height: 50px;
       overflow: hidden;
     }
@@ -204,11 +360,7 @@
       align-items: center;
     }
 
-    .next-run-items {
-      display: flex;
-      flex: 1;
-      height: 100%;
-    }
+    .next-run-items { display: flex; flex: 1; height: 100%; }
 
     .next-run-item {
       display: flex;
@@ -229,13 +381,7 @@
       color: var(--muted);
     }
 
-    .next-run-count {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .logs-section { margin-top: 24px; }
+    .next-run-count { font-size: 1rem; font-weight: 600; }
 
     .logs-header {
       display: flex;
@@ -246,15 +392,9 @@
       gap: 12px;
     }
 
-    .logs-header h2 {
-      font-size: 1rem;
-      font-weight: 500;
-    }
+    .logs-header h2 { font-size: 1rem; font-weight: 500; }
 
-    .period-tabs {
-      display: flex;
-      gap: 6px;
-    }
+    .period-tabs { display: flex; gap: 6px; }
 
     .period-tab {
       font-size: 0.72rem;
@@ -272,6 +412,7 @@
     }
 
     .period-tab:hover { color: var(--text); border-color: rgba(255,255,255,0.35); }
+
     .period-tab.active {
       background: rgba(255,255,255,0.95);
       color: #1a5fa8;
@@ -307,11 +448,7 @@
       margin-bottom: 6px;
     }
 
-    .log-card-failures {
-      font-size: 0.75rem;
-      color: #ffaaaa;
-      min-height: 1em;
-    }
+    .log-card-failures { font-size: 0.75rem; color: #ffaaaa; min-height: 1em; }
 
     .log-card-limit {
       font-size: 0.72rem;
@@ -321,9 +458,10 @@
       border-top: 1px solid var(--border);
     }
 
-    .logs-loading { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+    .logs-loading { font-size: 0.85rem; color: var(--muted); }
 
-    .config-section { margin-top: 56px; }
+    /* ── Config tab ──────────────────────────────────────── */
+    .config-section + .config-section { margin-top: 48px; }
 
     .config-section-header {
       display: flex;
@@ -332,21 +470,12 @@
       margin-bottom: 8px;
     }
 
-    .config-section-header h2 {
-      font-size: 1rem;
-      font-weight: 500;
-    }
+    .config-section-header h2 { font-size: 1rem; font-weight: 500; }
 
     .config-hint {
       font-size: 0.75rem;
       color: var(--muted);
       margin-bottom: 16px;
-    }
-
-    .config-locked {
-      font-size: 0.82rem;
-      color: var(--muted);
-      padding: 12px 0;
     }
 
     .config-rows { display: flex; flex-direction: column; }
@@ -361,12 +490,7 @@
 
     .config-row:first-child { border-top: 1px solid rgba(255,255,255,0.07); }
 
-    .move-btns {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      flex-shrink: 0;
-    }
+    .move-btns { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
 
     .btn-move {
       width: 20px;
@@ -387,12 +511,7 @@
     .btn-move:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: var(--text); }
     .btn-move:disabled { opacity: 0.2; cursor: not-allowed; }
 
-    .row-fields {
-      display: flex;
-      gap: 8px;
-      flex: 1;
-      min-width: 0;
-    }
+    .row-fields { display: flex; gap: 8px; flex: 1; min-width: 0; }
 
     .row-fields input {
       background: transparent;
@@ -411,28 +530,12 @@
 
     .field-name { flex: 2; font-size: 0.82rem; }
 
-    .field-note {
-      flex: 1;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
+    .field-note { flex: 1; font-size: 0.78rem; color: var(--muted); }
     .field-note::placeholder { color: rgba(255,255,255,0.22); }
     .field-note:focus { color: var(--text); }
 
-    .field-domain {
-      flex: 1;
-      font-size: 0.78rem;
-      font-family: monospace !important;
-      color: rgba(255,255,255,0.75);
-    }
-
-    .field-query {
-      flex: 2;
-      font-size: 0.78rem;
-      font-family: monospace !important;
-      color: rgba(255,255,255,0.75);
-    }
+    .field-domain { flex: 1; font-size: 0.78rem; font-family: monospace !important; color: rgba(255,255,255,0.75); }
+    .field-query  { flex: 2; font-size: 0.78rem; font-family: monospace !important; color: rgba(255,255,255,0.75); }
 
     .btn-delete-row {
       width: 24px;
@@ -494,21 +597,11 @@
 
     .btn-config-add:hover { background: rgba(255,255,255,0.06); color: var(--text); border-color: rgba(255,255,255,0.35); }
 
-    .config-save-status {
-      font-size: 0.75rem;
-      color: var(--muted);
-      min-height: 1.2em;
-      margin-top: 6px;
-    }
-
-    .config-save-status.error { color: #ffaaaa; }
+    .config-save-status { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; margin-top: 6px; }
+    .config-save-status.error   { color: #ffaaaa; }
     .config-save-status.success { color: rgba(100,220,140,0.85); }
 
-    @media (max-width: 600px) {
-      .logs-cards { grid-template-columns: repeat(2, 1fr); }
-      .field-domain, .field-note { display: none; }
-    }
-
+    /* ── Footer ──────────────────────────────────────────── */
     footer {
       display: flex;
       justify-content: space-between;
@@ -520,6 +613,14 @@
       max-width: 900px;
       margin: 0 auto;
       width: 100%;
+    }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .page { padding: 0 20px; }
+      .logs-cards { grid-template-columns: repeat(2, 1fr); }
+      .field-domain, .field-note { display: none; }
+      .unlock-form input { width: 100px; }
     }
   </style>
 </head>
@@ -536,60 +637,148 @@
         </svg>
         Cloudflash
         <span class="logo-sep">/</span>
-        <span class="logo-product">Admin Preview</span>
+        <span class="logo-product">Admin</span>
       </div>
+
+      <div class="header-auth">
+        <form class="unlock-form" id="unlock-form">
+          <input type="password" id="key-input" placeholder="Key" autocomplete="off" />
+          <button type="submit" class="btn-unlock">Unlock</button>
+        </form>
+        <span class="unlock-error" id="unlock-error"></span>
+        <div class="unlocked-badge" id="unlocked-badge" style="display:none">
+          <span class="unlocked-dot"></span>
+          <span>Unlocked</span>
+          <button type="button" class="btn-lock" id="btn-lock">Lock</button>
+        </div>
+      </div>
+
       <a href="/fintech" class="back-link">← fintech</a>
     </header>
 
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn" data-tab="preview" role="tab">Preview</button>
+      <button class="tab-btn" data-tab="pipeline" role="tab">Pipeline</button>
+      <button class="tab-btn" data-tab="config" role="tab">Config</button>
+      <button class="tab-btn active" data-tab="stats" role="tab">Stats</button>
+    </nav>
+
     <main>
-      <p class="eyebrow">Internal tool</p>
-      <h1>Email preview</h1>
 
-      <div class="key-row">
-        <input type="password" id="key-input" placeholder="Preview key" autocomplete="off" />
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-mock" id="btn-mock">Mock preview</button>
-        <button class="btn-fetch" id="btn-fetch">Fetch articles</button>
-        <button class="btn-live" id="btn-live">Live preview</button>
-      </div>
-
-      <p class="status" id="status"></p>
-
-      <div class="send-row" id="send-row" style="display:none; gap:10px; max-width:480px; margin-bottom:24px;">
-        <input type="email" id="send-email" placeholder="Send preview to…" autocomplete="off" />
-        <button class="btn-mock" id="btn-send">Send</button>
-      </div>
-      <p class="status" id="send-status"></p>
-
-      <div class="preview-wrap" id="preview-wrap">
-        <iframe id="preview-frame" title="Email preview" sandbox="allow-same-origin"></iframe>
-      </div>
-
-      <div class="next-run-card">
-        <div class="next-run-label">Next Run</div>
-        <div class="next-run-items">
-          <div class="next-run-item">
-            <span class="next-run-service">Tavily</span>
-            <span class="next-run-count" id="nr-tavily">—</span>
+      <!-- ── Preview tab ────────────────────────────────── -->
+      <div id="tab-preview" class="tab-panel">
+        <div class="tab-lock" id="lock-preview">Enter your key to unlock.</div>
+        <div id="content-preview" style="display:none">
+          <div class="btn-row">
+            <button class="btn-primary" id="btn-mock">Mock preview</button>
+            <button class="btn-secondary" id="btn-live">Live preview</button>
           </div>
-          <div class="next-run-item">
-            <span class="next-run-service">Anthropic</span>
-            <span class="next-run-count" id="nr-anthropic">1</span>
+          <p class="status" id="preview-status"></p>
+          <div class="send-row" id="send-row" style="display:none">
+            <input type="email" id="send-email" placeholder="Send preview to…" autocomplete="off" />
+            <button class="btn-primary" id="btn-send">Send</button>
           </div>
-          <div class="next-run-item">
-            <span class="next-run-service">Finnhub</span>
-            <span class="next-run-count" id="nr-finnhub">11</span>
-          </div>
-          <div class="next-run-item">
-            <span class="next-run-service">Resend</span>
-            <span class="next-run-count" id="nr-resend">—</span>
+          <p class="status" id="send-status"></p>
+          <div class="preview-wrap" id="preview-wrap">
+            <iframe id="preview-frame" title="Email preview" sandbox="allow-same-origin"></iframe>
           </div>
         </div>
       </div>
 
-      <div class="logs-section">
+      <!-- ── Pipeline tab ───────────────────────────────── -->
+      <div id="tab-pipeline" class="tab-panel">
+        <div class="tab-lock" id="lock-pipeline">Enter your key to unlock.</div>
+        <div id="content-pipeline" style="display:none">
+          <div class="btn-row">
+            <button class="btn-primary" id="btn-run">Run &amp; send</button>
+            <button class="btn-secondary" id="btn-fetch">Fetch articles</button>
+          </div>
+          <p class="pipeline-sub" id="pipeline-sub"></p>
+          <p class="status" id="pipeline-status"></p>
+          <div class="run-history">
+            <h2>Run history</h2>
+            <p class="logs-loading" id="runs-loading">Loading…</p>
+            <p class="run-empty" id="runs-empty" style="display:none">No runs yet.</p>
+            <table class="run-table" id="run-table" style="display:none">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Articles</th>
+                  <th>Stories</th>
+                  <th>Ran at</th>
+                </tr>
+              </thead>
+              <tbody id="run-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Config tab ─────────────────────────────────── -->
+      <div id="tab-config" class="tab-panel">
+        <div class="tab-lock" id="lock-config">Enter your key to unlock.</div>
+        <div id="content-config" style="display:none">
+
+          <div class="config-section">
+            <div class="config-section-header">
+              <h2>Story topics</h2>
+              <button class="btn-config-save" id="save-topics">Save</button>
+            </div>
+            <p class="config-hint">Order determines Claude's story priority — top topics rank first.</p>
+            <div id="rows-topics" class="config-rows"></div>
+            <button class="btn-config-add" id="add-topics">+ Add topic</button>
+            <p class="config-save-status" id="save-status-topics"></p>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-header">
+              <h2>Vendor watchlist</h2>
+              <button class="btn-config-save" id="save-vendors">Save</button>
+            </div>
+            <p class="config-hint">Custom sort — cosmetic only. Notes are admin-only, not passed to Claude.</p>
+            <div id="rows-vendors" class="config-rows"></div>
+            <button class="btn-config-add" id="add-vendors">+ Add vendor</button>
+            <p class="config-save-status" id="save-status-vendors"></p>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-header">
+              <h2>News sources</h2>
+              <button class="btn-config-save" id="save-sources">Save</button>
+            </div>
+            <p class="config-hint">Tavily fetches from each source daily. Order is cosmetic.</p>
+            <div id="rows-sources" class="config-rows"></div>
+            <button class="btn-config-add" id="add-sources">+ Add source</button>
+            <p class="config-save-status" id="save-status-sources"></p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Stats tab ──────────────────────────────────── -->
+      <div id="tab-stats" class="tab-panel active">
+        <div class="next-run-card">
+          <div class="next-run-label">Next Run</div>
+          <div class="next-run-items">
+            <div class="next-run-item">
+              <span class="next-run-service">Tavily</span>
+              <span class="next-run-count" id="nr-tavily">—</span>
+            </div>
+            <div class="next-run-item">
+              <span class="next-run-service">Anthropic</span>
+              <span class="next-run-count">1</span>
+            </div>
+            <div class="next-run-item">
+              <span class="next-run-service">Finnhub</span>
+              <span class="next-run-count">11</span>
+            </div>
+            <div class="next-run-item">
+              <span class="next-run-service">Resend</span>
+              <span class="next-run-count" id="nr-resend">—</span>
+            </div>
+          </div>
+        </div>
+
         <div class="logs-header">
           <h2>API usage</h2>
           <div class="period-tabs" id="period-tabs">
@@ -600,72 +789,33 @@
             <button class="period-tab" data-period="28d">28 days</button>
           </div>
         </div>
-        <p class="logs-loading" id="logs-loading">Loading...</p>
+        <p class="logs-loading" id="logs-loading">Loading…</p>
         <div class="logs-cards" id="logs-cards" style="display:none">
-          <div class="log-card" id="card-tavily">
+          <div class="log-card">
             <div class="log-card-service">Tavily</div>
             <div class="log-card-count" id="count-tavily">—</div>
             <div class="log-card-failures" id="failures-tavily"></div>
             <div class="log-card-limit">1,000 / month</div>
           </div>
-          <div class="log-card" id="card-anthropic">
+          <div class="log-card">
             <div class="log-card-service">Anthropic</div>
             <div class="log-card-count" id="count-anthropic">—</div>
             <div class="log-card-failures" id="failures-anthropic"></div>
             <div class="log-card-limit">Pay-as-you-go · No cap</div>
           </div>
-          <div class="log-card" id="card-finnhub">
+          <div class="log-card">
             <div class="log-card-service">Finnhub</div>
             <div class="log-card-count" id="count-finnhub">—</div>
             <div class="log-card-failures" id="failures-finnhub"></div>
             <div class="log-card-limit">No monthly cap · 30 req/sec</div>
           </div>
-          <div class="log-card" id="card-resend">
+          <div class="log-card">
             <div class="log-card-service">Resend</div>
             <div class="log-card-count" id="count-resend">—</div>
             <div class="log-card-failures" id="failures-resend"></div>
             <div class="log-card-limit">50,000 / month · 5 req/sec</div>
           </div>
         </div>
-      </div>
-
-      <div class="config-section" id="section-topics">
-        <div class="config-section-header">
-          <h2>Story topics</h2>
-          <button class="btn-config-save" id="save-topics">Save</button>
-        </div>
-        <p class="config-hint">Order determines Claude's story priority — top topics rank first.</p>
-        <div id="rows-topics" class="config-rows">
-          <p class="config-locked">Loading…</p>
-        </div>
-        <button class="btn-config-add" id="add-topics" style="display:none">+ Add topic</button>
-        <p class="config-save-status" id="save-status-topics"></p>
-      </div>
-
-      <div class="config-section" id="section-vendors">
-        <div class="config-section-header">
-          <h2>Vendor watchlist</h2>
-          <button class="btn-config-save" id="save-vendors">Save</button>
-        </div>
-        <p class="config-hint">Custom sort — cosmetic only. Notes are admin-only, not passed to Claude.</p>
-        <div id="rows-vendors" class="config-rows">
-          <p class="config-locked">Loading…</p>
-        </div>
-        <button class="btn-config-add" id="add-vendors" style="display:none">+ Add vendor</button>
-        <p class="config-save-status" id="save-status-vendors"></p>
-      </div>
-
-      <div class="config-section" id="section-sources">
-        <div class="config-section-header">
-          <h2>News sources</h2>
-          <button class="btn-config-save" id="save-sources">Save</button>
-        </div>
-        <p class="config-hint">Tavily fetches from each source daily. Order is cosmetic.</p>
-        <div id="rows-sources" class="config-rows">
-          <p class="config-locked">Loading…</p>
-        </div>
-        <button class="btn-config-add" id="add-sources" style="display:none">+ Add source</button>
-        <p class="config-save-status" id="save-status-sources"></p>
       </div>
 
     </main>
@@ -677,348 +827,411 @@
   </footer>
 
   <script>
-    const keyInput   = document.getElementById('key-input');
-    const btnMock    = document.getElementById('btn-mock');
-    const btnFetch   = document.getElementById('btn-fetch');
-    const btnLive    = document.getElementById('btn-live');
-    const btnSend    = document.getElementById('btn-send');
-    const sendEmail  = document.getElementById('send-email');
-    const sendRow    = document.getElementById('send-row');
-    const sendStatus = document.getElementById('send-status');
-    const status     = document.getElementById('status');
-    const wrap       = document.getElementById('preview-wrap');
-    const frame      = document.getElementById('preview-frame');
+  (function () {
+
+    // ── State ────────────────────────────────────────────────────
+    let authKey  = '';
+    let activeTab = 'stats';
+    const PROTECTED = ['preview', 'pipeline', 'config'];
+
+    // ── Tabs ─────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+      activeTab = tab;
+    }
+
+    // ── Auth ─────────────────────────────────────────────────────
+    const unlockForm    = document.getElementById('unlock-form');
+    const keyInput      = document.getElementById('key-input');
+    const unlockError   = document.getElementById('unlock-error');
+    const unlockedBadge = document.getElementById('unlocked-badge');
+
+    unlockForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const key = keyInput.value.trim();
+      if (!key) return;
+      unlockError.textContent = '';
+      await tryUnlock(key);
+    });
+
+    document.getElementById('btn-lock').addEventListener('click', lock);
+
+    async function tryUnlock(key, silent = false) {
+      try {
+        const res = await fetch(`https://api.cloudflash.com/api/config?key=${encodeURIComponent(key)}`);
+        if (res.status === 401) { if (!silent) unlockError.textContent = 'Invalid key.'; return; }
+        if (!res.ok)            { if (!silent) unlockError.textContent = 'Server error.'; return; }
+
+        const data = await res.json();
+        authKey = key;
+        localStorage.setItem('preview_key', key);
+
+        cfg.topics  = data.topics  || [];
+        cfg.vendors = data.vendors || [];
+        cfg.sources = data.sources || [];
+
+        applyUnlocked();
+      } catch {
+        if (!silent) unlockError.textContent = 'Request failed.';
+      }
+    }
+
+    function applyUnlocked() {
+      unlockForm.style.display    = 'none';
+      unlockedBadge.style.display = 'flex';
+
+      PROTECTED.forEach(tab => {
+        document.getElementById(`lock-${tab}`).style.display    = 'none';
+        document.getElementById(`content-${tab}`).style.display = '';
+      });
+
+      renderAll();
+      loadRuns();
+      loadSubCount();
+      switchTab('preview');
+    }
+
+    function lock() {
+      authKey = '';
+      localStorage.removeItem('preview_key');
+
+      unlockForm.style.display    = 'flex';
+      keyInput.value              = '';
+      unlockedBadge.style.display = 'none';
+
+      PROTECTED.forEach(tab => {
+        document.getElementById(`lock-${tab}`).style.display    = 'flex';
+        document.getElementById(`content-${tab}`).style.display = 'none';
+      });
+
+      switchTab('stats');
+    }
+
+    // ── Preview tab ──────────────────────────────────────────────
+    const btnMock       = document.getElementById('btn-mock');
+    const btnLive       = document.getElementById('btn-live');
+    const btnSend       = document.getElementById('btn-send');
+    const sendEmail     = document.getElementById('send-email');
+    const sendRow       = document.getElementById('send-row');
+    const sendStatus    = document.getElementById('send-status');
+    const previewStatus = document.getElementById('preview-status');
+    const wrap          = document.getElementById('preview-wrap');
+    const frame         = document.getElementById('preview-frame');
     let currentPreviewId = null;
 
-    // Restore saved key
-    const saved = localStorage.getItem('preview_key');
-    if (saved) keyInput.value = saved;
-
     async function loadPreview(endpoint) {
-      const key = keyInput.value.trim();
-      if (!key) { status.textContent = 'Enter your preview key first.'; status.className = 'status error'; return; }
-
-      localStorage.setItem('preview_key', key);
-      status.textContent = endpoint === 'preview' ? 'Loading mock preview…' : 'Loading live preview — this may take 20–30 seconds…';
-      status.className = 'status';
+      previewStatus.textContent = endpoint === 'preview'
+        ? 'Loading mock preview…'
+        : 'Loading live preview — this may take 20–30 seconds…';
+      previewStatus.className = 'status';
       btnMock.disabled = true;
-      btnFetch.disabled = true;
       btnLive.disabled = true;
-      wrap.style.display = 'none';
+      wrap.style.display  = 'none';
       sendRow.style.display = 'none';
       sendStatus.textContent = '';
       currentPreviewId = null;
 
       try {
-        const res = await fetch(`https://api.cloudflash.com/${endpoint}?key=${encodeURIComponent(key)}`);
-        if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
-        if (res.status === 404) { status.textContent = 'No pipeline run found. Run the pipeline first.'; status.className = 'status error'; return; }
-        if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
+        const res = await fetch(`https://api.cloudflash.com/${endpoint}?key=${encodeURIComponent(authKey)}`);
+        if (res.status === 401) { previewStatus.textContent = 'Invalid key.'; previewStatus.className = 'status error'; return; }
+        if (res.status === 404) { previewStatus.textContent = 'No pipeline run found. Run the pipeline first.'; previewStatus.className = 'status error'; return; }
+        if (!res.ok)            { previewStatus.textContent = 'Server error. Try again.'; previewStatus.className = 'status error'; return; }
 
         const previewId = res.headers.get('X-Preview-ID');
-        if (previewId) {
-          currentPreviewId = previewId;
-          sendRow.style.display = 'flex';
-        }
+        if (previewId) { currentPreviewId = previewId; sendRow.style.display = 'flex'; }
 
         const html = await res.text();
-        const doc = frame.contentDocument || frame.contentWindow.document;
+        const doc  = frame.contentDocument || frame.contentWindow.document;
         doc.open(); doc.write(html); doc.close();
-
         wrap.style.display = 'block';
-        status.textContent = '';
-
-        setTimeout(() => {
-          frame.style.height = doc.documentElement.scrollHeight + 'px';
-        }, 100);
+        previewStatus.textContent = '';
+        setTimeout(() => { frame.style.height = doc.documentElement.scrollHeight + 'px'; }, 100);
       } catch {
-        status.textContent = 'Request failed. Check your connection.';
-        status.className = 'status error';
+        previewStatus.textContent = 'Request failed. Check your connection.';
+        previewStatus.className   = 'status error';
       } finally {
         btnMock.disabled = false;
-        btnFetch.disabled = false;
         btnLive.disabled = false;
       }
     }
 
+    btnMock.addEventListener('click', () => loadPreview('preview'));
+    btnLive.addEventListener('click', () => loadPreview('preview/live'));
+
     btnSend.addEventListener('click', async () => {
-      const key = keyInput.value.trim();
-      const to  = sendEmail.value.trim();
+      const to = sendEmail.value.trim();
       if (!to) { sendStatus.textContent = 'Enter an email address.'; sendStatus.className = 'status error'; return; }
       if (!currentPreviewId) { sendStatus.textContent = 'No preview loaded.'; sendStatus.className = 'status error'; return; }
 
       btnSend.disabled = true;
       sendStatus.textContent = 'Sending…';
-      sendStatus.className = 'status';
+      sendStatus.className   = 'status';
 
       try {
-        const res = await fetch(`https://api.cloudflash.com/preview/send?key=${encodeURIComponent(key)}&id=${currentPreviewId}&to=${encodeURIComponent(to)}`);
+        const res = await fetch(`https://api.cloudflash.com/preview/send?key=${encodeURIComponent(authKey)}&id=${currentPreviewId}&to=${encodeURIComponent(to)}`);
         if (res.status === 401) { sendStatus.textContent = 'Invalid key.'; sendStatus.className = 'status error'; return; }
-        if (!res.ok) { sendStatus.textContent = 'Send failed. Try again.'; sendStatus.className = 'status error'; return; }
+        if (!res.ok)            { sendStatus.textContent = 'Send failed. Try again.'; sendStatus.className = 'status error'; return; }
         sendStatus.textContent = `Sent to ${to}.`;
-        sendStatus.className = 'status';
+        sendStatus.className   = 'status';
       } catch {
-        sendStatus.textContent = 'Request failed. Check your connection.';
-        sendStatus.className = 'status error';
+        sendStatus.textContent = 'Request failed.';
+        sendStatus.className   = 'status error';
       } finally {
         btnSend.disabled = false;
       }
     });
 
-    btnFetch.addEventListener('click', async () => {
-      const key = keyInput.value.trim();
-      if (!key) { status.textContent = 'Enter your preview key first.'; status.className = 'status error'; return; }
+    // ── Pipeline tab ─────────────────────────────────────────────
+    const btnRun        = document.getElementById('btn-run');
+    const btnFetch      = document.getElementById('btn-fetch');
+    const pipelineSub   = document.getElementById('pipeline-sub');
+    const pipelineStatus = document.getElementById('pipeline-status');
+    let subCount = null;
 
-      localStorage.setItem('preview_key', key);
-      status.textContent = 'Fetching articles from Tavily — this may take 15–20 seconds…';
-      status.className = 'status';
-      btnMock.disabled = true;
+    function loadSubCount() {
+      fetch('https://api.cloudflash.com/api/subscribers/count')
+        .then(r => r.json())
+        .then(data => {
+          if (data.count != null) {
+            subCount = data.count;
+            pipelineSub.textContent = `Sends to ${data.count} confirmed subscriber${data.count === 1 ? '' : 's'}.`;
+            document.getElementById('nr-resend').textContent = data.count;
+          }
+        })
+        .catch(() => {});
+    }
+
+    btnRun.addEventListener('click', async () => {
+      const label = subCount != null ? `${subCount} subscriber${subCount === 1 ? '' : 's'}` : 'all confirmed subscribers';
+      if (!confirm(`Send today's newsletter to ${label}?`)) return;
+
+      btnRun.disabled  = true;
       btnFetch.disabled = true;
-      btnLive.disabled = true;
+      pipelineStatus.textContent = 'Running pipeline — this may take 30–60 seconds…';
+      pipelineStatus.className   = 'status';
 
       try {
-        const res = await fetch(`https://api.cloudflash.com/pipeline/fetch?key=${encodeURIComponent(key)}`);
-        if (res.status === 401) { status.textContent = 'Invalid key.'; status.className = 'status error'; return; }
-        if (!res.ok) { status.textContent = 'Server error. Try again.'; status.className = 'status error'; return; }
-        const data = await res.json();
-        status.textContent = `Fetched ${data.articles} articles for ${data.date}. Ready for live preview.`;
+        const res = await fetch(`https://api.cloudflash.com/run?key=${encodeURIComponent(authKey)}`);
+        if (res.status === 401) { pipelineStatus.textContent = 'Invalid key.'; pipelineStatus.className = 'status error'; return; }
+        if (!res.ok)            { pipelineStatus.textContent = 'Pipeline failed. Check stats for errors.'; pipelineStatus.className = 'status error'; return; }
+        pipelineStatus.textContent = 'Pipeline complete. Newsletter sent.';
+        pipelineStatus.className   = 'status';
+        loadRuns();
       } catch {
-        status.textContent = 'Request failed. Check your connection.';
-        status.className = 'status error';
+        pipelineStatus.textContent = 'Request failed.';
+        pipelineStatus.className   = 'status error';
       } finally {
-        btnMock.disabled = false;
+        btnRun.disabled  = false;
         btnFetch.disabled = false;
-        btnLive.disabled = false;
       }
     });
 
-    btnMock.addEventListener('click', () => loadPreview('preview'));
-    btnLive.addEventListener('click', () => loadPreview('preview/live'));
+    btnFetch.addEventListener('click', async () => {
+      btnRun.disabled  = true;
+      btnFetch.disabled = true;
+      pipelineStatus.textContent = 'Fetching articles from Tavily — this may take 15–20 seconds…';
+      pipelineStatus.className   = 'status';
 
-    // Next Run card — Resend count from live subscriber count
-    fetch('https://api.cloudflash.com/api/subscribers/count')
-      .then(r => r.json())
-      .then(data => {
-        if (data.count != null) {
-          document.getElementById('nr-resend').textContent = data.count;
-        }
-      })
-      .catch(() => {});
-  </script>
-
-  <script>
-    (function () {
-      const cfg = { topics: [], vendors: [], sources: [] };
-      const dirty = { topics: false, vendors: false, sources: false };
-
-      // ── Render ────────────────────────────────────────────────
-      function renderSection(section) {
-        const container = document.getElementById(`rows-${section}`);
-        const addBtn    = document.getElementById(`add-${section}`);
-        const items     = cfg[section];
-        container.innerHTML = '';
-        items.forEach((item, i) => {
-          container.appendChild(makeRow(section, item, i, items.length));
-        });
-        addBtn.style.display = '';
-        if (section === 'sources') {
-          document.getElementById('nr-tavily').textContent = items.length || '—';
-        }
+      try {
+        const res = await fetch(`https://api.cloudflash.com/pipeline/fetch?key=${encodeURIComponent(authKey)}`);
+        if (res.status === 401) { pipelineStatus.textContent = 'Invalid key.'; pipelineStatus.className = 'status error'; return; }
+        if (!res.ok)            { pipelineStatus.textContent = 'Server error. Try again.'; pipelineStatus.className = 'status error'; return; }
+        const data = await res.json();
+        pipelineStatus.textContent = `Fetched ${data.articles} articles for ${data.date}.`;
+        pipelineStatus.className   = 'status';
+        loadRuns();
+      } catch {
+        pipelineStatus.textContent = 'Request failed.';
+        pipelineStatus.className   = 'status error';
+      } finally {
+        btnRun.disabled  = false;
+        btnFetch.disabled = false;
       }
+    });
 
-      function renderAll() {
-        renderSection('topics');
-        renderSection('vendors');
-        renderSection('sources');
+    async function loadRuns() {
+      const loading  = document.getElementById('runs-loading');
+      const empty    = document.getElementById('runs-empty');
+      const table    = document.getElementById('run-table');
+      const tbody    = document.getElementById('run-tbody');
+
+      loading.style.display = '';
+      empty.style.display   = 'none';
+      table.style.display   = 'none';
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/api/pipeline/runs?key=${encodeURIComponent(authKey)}`);
+        if (!res.ok) { loading.textContent = 'Failed to load run history.'; return; }
+        const runs = await res.json();
+        loading.style.display = 'none';
+
+        if (!runs.length) { empty.style.display = ''; return; }
+
+        tbody.innerHTML = '';
+        runs.forEach(run => {
+          const tr = document.createElement('tr');
+          const d  = new Date(run.created_at + (run.created_at.includes('Z') ? '' : 'Z'));
+          const timeStr = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          tr.innerHTML = `<td>${run.date}</td><td>${run.articles}</td><td>${run.stories}</td><td>${timeStr}</td>`;
+          tbody.appendChild(tr);
+        });
+        table.style.display = '';
+      } catch {
+        loading.textContent = 'Failed to load run history.';
       }
+    }
 
-      // ── Row builder ───────────────────────────────────────────
-      function makeRow(section, item, idx, total) {
-        const row = document.createElement('div');
-        row.className = 'config-row';
+    // ── Config tab ───────────────────────────────────────────────
+    const cfg   = { topics: [], vendors: [], sources: [] };
+    const dirty = { topics: false, vendors: false, sources: false };
 
-        // Move buttons
-        const moveBtns = document.createElement('div');
-        moveBtns.className = 'move-btns';
-        ['↑', '↓'].forEach((arrow, dir) => {
-          const btn = document.createElement('button');
-          btn.className = 'btn-move';
-          btn.textContent = arrow;
-          btn.title = dir === 0 ? 'Move up' : 'Move down';
-          btn.disabled = dir === 0 ? idx === 0 : idx === total - 1;
-          btn.addEventListener('click', () => move(section, idx, dir === 0 ? -1 : 1));
-          moveBtns.appendChild(btn);
-        });
-        row.appendChild(moveBtns);
+    function renderSection(section) {
+      const container = document.getElementById(`rows-${section}`);
+      container.innerHTML = '';
+      cfg[section].forEach((item, i) => container.appendChild(makeRow(section, item, i, cfg[section].length)));
+      if (section === 'sources') {
+        document.getElementById('nr-tavily').textContent = cfg.sources.length || '—';
+      }
+    }
 
-        // Fields
-        const rowFields = document.createElement('div');
-        rowFields.className = 'row-fields';
+    function renderAll() {
+      ['topics', 'vendors', 'sources'].forEach(renderSection);
+    }
 
-        const fields = section === 'sources'
-          ? [['name', 'flex:1.5', 'Source name'], ['domain', 'flex:1', 'domain.com'], ['query', 'flex:2', 'Search query'], ['note', 'flex:1', 'Note (admin only)']]
-          : [['name', 'flex:2', null], ['note', 'flex:1', 'Note (admin only)']];
+    function makeRow(section, item, idx, total) {
+      const row = document.createElement('div');
+      row.className = 'config-row';
 
-        fields.forEach(([field, flexStyle, placeholder]) => {
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.className = `field-${field}`;
-          input.value = item[field] || '';
-          if (placeholder) input.placeholder = placeholder;
-          if (flexStyle) input.style.flex = flexStyle.replace('flex:', '').trim();
-          input.addEventListener('input', () => {
-            item[field] = input.value;
-            markDirty(section);
-          });
-          rowFields.appendChild(input);
-        });
-
-        row.appendChild(rowFields);
-
-        // Delete button
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-delete-row';
-        delBtn.textContent = '×';
-        delBtn.title = 'Delete row';
-        delBtn.addEventListener('click', () => {
-          cfg[section].splice(idx, 1);
+      const moveBtns = document.createElement('div');
+      moveBtns.className = 'move-btns';
+      ['↑', '↓'].forEach((arrow, dir) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-move';
+        btn.textContent = arrow;
+        btn.disabled = dir === 0 ? idx === 0 : idx === total - 1;
+        btn.addEventListener('click', () => {
+          const arr = cfg[section];
+          const to  = idx + (dir === 0 ? -1 : 1);
+          if (to < 0 || to >= arr.length) return;
+          [arr[idx], arr[to]] = [arr[to], arr[idx]];
           markDirty(section);
           renderSection(section);
         });
-        row.appendChild(delBtn);
+        moveBtns.appendChild(btn);
+      });
+      row.appendChild(moveBtns);
 
-        return row;
-      }
+      const rowFields = document.createElement('div');
+      rowFields.className = 'row-fields';
 
-      // ── Move ──────────────────────────────────────────────────
-      function move(section, idx, dir) {
-        const arr = cfg[section];
-        const newIdx = idx + dir;
-        if (newIdx < 0 || newIdx >= arr.length) return;
-        [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+      const fields = section === 'sources'
+        ? [['name', '1.5', 'Source name'], ['domain', '1', 'domain.com'], ['query', '2', 'Search query'], ['note', '1', 'Note (admin only)']]
+        : [['name', '2', null], ['note', '1', 'Note (admin only)']];
+
+      fields.forEach(([field, flex, placeholder]) => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = `field-${field}`;
+        input.value = item[field] || '';
+        input.style.flex = flex;
+        if (placeholder) input.placeholder = placeholder;
+        input.addEventListener('input', () => { item[field] = input.value; markDirty(section); });
+        rowFields.appendChild(input);
+      });
+      row.appendChild(rowFields);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn-delete-row';
+      del.textContent = '×';
+      del.title = 'Delete row';
+      del.addEventListener('click', () => { cfg[section].splice(idx, 1); markDirty(section); renderSection(section); });
+      row.appendChild(del);
+
+      return row;
+    }
+
+    function markDirty(section) {
+      dirty[section] = true;
+      document.getElementById(`save-${section}`).classList.add('dirty');
+    }
+
+    ['topics', 'vendors', 'sources'].forEach(section => {
+      document.getElementById(`add-${section}`).addEventListener('click', () => {
+        const item = { id: null, order_pos: cfg[section].length + 1, name: '', note: '' };
+        if (section === 'sources') { item.domain = ''; item.query = ''; }
+        cfg[section].push(item);
         markDirty(section);
         renderSection(section);
-      }
+        const rows = document.getElementById(`rows-${section}`).querySelectorAll('.config-row');
+        rows[rows.length - 1]?.querySelector('.field-name')?.focus();
+      });
 
-      // ── Add row ───────────────────────────────────────────────
-      ['topics', 'vendors', 'sources'].forEach(section => {
-        document.getElementById(`add-${section}`).addEventListener('click', () => {
-          const base = { id: null, order_pos: cfg[section].length + 1, name: '', note: '' };
-          if (section === 'sources') { base.domain = ''; base.query = ''; }
-          cfg[section].push(base);
-          markDirty(section);
-          renderSection(section);
-          // Focus the name field of the new row
-          const rows = document.getElementById(`rows-${section}`).querySelectorAll('.config-row');
-          const lastRow = rows[rows.length - 1];
-          if (lastRow) lastRow.querySelector('.field-name')?.focus();
+      document.getElementById(`save-${section}`).addEventListener('click', () => saveSection(section));
+    });
+
+    async function saveSection(section) {
+      const saveBtn    = document.getElementById(`save-${section}`);
+      const saveStatus = document.getElementById(`save-status-${section}`);
+
+      saveBtn.classList.remove('dirty');
+      saveStatus.textContent = 'Saving…';
+      saveStatus.className   = 'config-save-status';
+
+      const items = cfg[section].map((item, i) => ({ ...item, order_pos: i + 1 }));
+
+      try {
+        const res = await fetch(`https://api.cloudflash.com/api/config/${section}?key=${encodeURIComponent(authKey)}`, {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(items),
         });
-      });
 
-      // ── Dirty state ───────────────────────────────────────────
-      function markDirty(section) {
-        dirty[section] = true;
-        const btn = document.getElementById(`save-${section}`);
-        btn.classList.add('dirty');
-      }
+        if (res.status === 401) { saveStatus.textContent = 'Invalid key.'; saveStatus.className = 'config-save-status error'; saveBtn.classList.add('dirty'); return; }
+        if (!res.ok)            { saveStatus.textContent = 'Save failed. Try again.'; saveStatus.className = 'config-save-status error'; saveBtn.classList.add('dirty'); return; }
 
-      // ── Save ──────────────────────────────────────────────────
-      ['topics', 'vendors', 'sources'].forEach(section => {
-        document.getElementById(`save-${section}`).addEventListener('click', () => saveSection(section));
-      });
+        dirty[section] = false;
+        saveStatus.textContent = 'Saved.';
+        saveStatus.className   = 'config-save-status success';
+        setTimeout(() => { saveStatus.textContent = ''; }, 3000);
 
-      async function saveSection(section) {
-        const key = document.getElementById('key-input').value.trim();
-        const saveBtn    = document.getElementById(`save-${section}`);
-        const saveStatus = document.getElementById(`save-status-${section}`);
-
-        if (!key) {
-          saveStatus.textContent = 'Enter your preview key first.';
-          saveStatus.className   = 'config-save-status error';
-          return;
-        }
-
-        saveBtn.classList.remove('dirty');
-        saveBtn.style.cursor = 'not-allowed';
-        saveStatus.textContent = 'Saving…';
-        saveStatus.className   = 'config-save-status';
-
-        const items = cfg[section].map((item, i) => ({ ...item, order_pos: i + 1 }));
-
-        try {
-          const res = await fetch(`https://api.cloudflash.com/api/config/${section}?key=${encodeURIComponent(key)}`, {
-            method:  'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(items),
-          });
-
-          if (res.status === 401) {
-            saveStatus.textContent = 'Invalid key.';
-            saveStatus.className   = 'config-save-status error';
-            saveBtn.classList.add('dirty');
-            return;
-          }
-          if (!res.ok) {
-            saveStatus.textContent = 'Save failed. Try again.';
-            saveStatus.className   = 'config-save-status error';
-            saveBtn.classList.add('dirty');
-            return;
-          }
-
-          dirty[section] = false;
-          saveStatus.textContent = 'Saved.';
-          saveStatus.className   = 'config-save-status success';
-          setTimeout(() => { saveStatus.textContent = ''; }, 3000);
-
-          // Reload to get fresh IDs from D1
-          await loadConfig();
-        } catch {
-          saveStatus.textContent = 'Request failed. Check your connection.';
-          saveStatus.className   = 'config-save-status error';
-          saveBtn.classList.add('dirty');
-        } finally {
-          saveBtn.style.cursor = '';
-        }
-      }
-
-      // ── Load ──────────────────────────────────────────────────
-      async function loadConfig() {
-        try {
-          const res = await fetch('https://api.cloudflash.com/api/config');
-          if (!res.ok) throw new Error();
-          const data = await res.json();
+        // Reload to get fresh IDs
+        const cfgRes = await fetch(`https://api.cloudflash.com/api/config?key=${encodeURIComponent(authKey)}`);
+        if (cfgRes.ok) {
+          const data = await cfgRes.json();
           cfg.topics  = data.topics  || [];
           cfg.vendors = data.vendors || [];
           cfg.sources = data.sources || [];
           renderAll();
-        } catch {
-          ['topics', 'vendors', 'sources'].forEach(section => {
-            const container = document.getElementById(`rows-${section}`);
-            container.innerHTML = '<p class="config-locked">Failed to load config.</p>';
-          });
         }
+      } catch {
+        saveStatus.textContent = 'Request failed.';
+        saveStatus.className   = 'config-save-status error';
+        saveBtn.classList.add('dirty');
       }
+    }
 
-      loadConfig();
-    })();
-  </script>
-
-  <script>
+    // ── Stats tab ────────────────────────────────────────────────
     (function () {
-      const loading  = document.getElementById('logs-loading');
-      const cards    = document.getElementById('logs-cards');
-      const tabs     = document.querySelectorAll('.period-tab');
-      const services = ['tavily', 'anthropic', 'finnhub', 'resend'];
-      let logData    = null;
+      const loading    = document.getElementById('logs-loading');
+      const cards      = document.getElementById('logs-cards');
+      const tabs       = document.querySelectorAll('.period-tab');
+      const services   = ['tavily', 'anthropic', 'finnhub', 'resend'];
+      let logData      = null;
       let activePeriod = '1d';
 
       function render(period) {
         if (!logData) return;
-        services.forEach(service => {
-          const { calls, failures } = logData[service]?.[period] ?? { calls: 0, failures: 0 };
-          document.getElementById(`count-${service}`).textContent = calls.toLocaleString();
-          const failEl = document.getElementById(`failures-${service}`);
-          failEl.textContent = failures > 0 ? `${failures} failed` : '';
+        services.forEach(svc => {
+          const { calls, failures } = logData[svc]?.[period] ?? { calls: 0, failures: 0 };
+          document.getElementById(`count-${svc}`).textContent    = calls.toLocaleString();
+          document.getElementById(`failures-${svc}`).textContent = failures > 0 ? `${failures} failed` : '';
         });
       }
 
@@ -1033,16 +1246,18 @@
 
       fetch('https://api.cloudflash.com/api/logs')
         .then(r => r.json())
-        .then(data => {
-          logData = data;
-          loading.remove();
-          cards.style.display = 'grid';
-          render(activePeriod);
-        })
-        .catch(() => {
-          loading.textContent = 'Failed to load usage data.';
-        });
+        .then(data => { logData = data; loading.remove(); cards.style.display = 'grid'; render(activePeriod); })
+        .catch(() => { loading.textContent = 'Failed to load usage data.'; });
     })();
+
+    // ── Init ─────────────────────────────────────────────────────
+    const savedKey = localStorage.getItem('preview_key');
+    if (savedKey) {
+      keyInput.value = savedKey;
+      tryUnlock(savedKey, true);
+    }
+
+  })();
   </script>
 
 </body>

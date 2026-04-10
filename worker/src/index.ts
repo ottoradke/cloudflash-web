@@ -1098,8 +1098,26 @@ export default {
     }
 
     if (url.pathname === "/api/config" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
       const config = await loadConfig(env.DB);
       return jsonResponse(config);
+    }
+
+    if (url.pathname === "/api/pipeline/runs" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const runs = await env.DB.prepare(
+        "SELECT id, date, articles_json, stories_json, created_at FROM pipeline_runs ORDER BY created_at DESC LIMIT 20"
+      ).all<{ id: number; date: string; articles_json: string | null; stories_json: string | null; created_at: string }>();
+      const results = runs.results.map(run => ({
+        id: run.id,
+        date: run.date,
+        articles: run.articles_json ? (JSON.parse(run.articles_json) as unknown[]).length : 0,
+        stories: run.stories_json ? (JSON.parse(run.stories_json) as unknown[]).length : 0,
+        created_at: run.created_at,
+      }));
+      return jsonResponse(results);
     }
 
     if (url.pathname === "/api/config/topics" && request.method === "PUT") {
