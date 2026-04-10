@@ -930,7 +930,8 @@
             <button class="btn-primary" id="btn-mock">Mock preview</button>
             <button class="btn-secondary" id="btn-live">Live preview</button>
           </div>
-          <p id="preview-note" style="margin:10px 0 0;font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6"><strong style="color:rgba(255,255,255,0.85);font-weight:500">Mock</strong> renders instantly using hardcoded sample content. <strong style="color:rgba(255,255,255,0.85);font-weight:500">Live</strong> reuses the most recent pipeline articles, then calls Claude and Finnhub fresh — takes 20–30s and costs an Anthropic API call.</p>
+          <p style="margin:10px 0 0;font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6"><strong style="color:rgba(255,255,255,0.85);font-weight:500">Mock</strong> renders instantly using hardcoded sample content. <strong style="color:rgba(255,255,255,0.85);font-weight:500">Live</strong> reuses the most recent pipeline articles, then calls Claude and Finnhub fresh — takes 20–30s and costs an Anthropic API call.</p>
+          <p id="pipeline-date-note" style="display:none;margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.55)">Articles fetched: <strong id="pipeline-date-val" style="color:rgba(255,255,255,0.85);font-weight:500"></strong></p>
           <p class="status" id="preview-status"></p>
           <div class="send-row" id="send-row" style="display:none">
             <input type="email" id="send-email" placeholder="Send preview to…" autocomplete="off" />
@@ -1246,12 +1247,13 @@
         if (previewId) { currentPreviewId = previewId; sendRow.style.display = 'flex'; }
 
         const pipelineDate = res.headers.get('X-Pipeline-Date');
-        const note = document.getElementById('preview-note');
-        if (pipelineDate && note) {
-          note.innerHTML = note.innerHTML.replace(
-            /reuses the most recent pipeline articles/,
-            `reuses articles fetched on <strong style="color:rgba(255,255,255,0.85);font-weight:500">${pipelineDate}</strong>`
-          );
+        const dateNote = document.getElementById('pipeline-date-note');
+        const dateVal  = document.getElementById('pipeline-date-val');
+        if (pipelineDate && dateNote && dateVal) {
+          dateVal.textContent = pipelineDate;
+          dateNote.style.display = '';
+        } else if (dateNote) {
+          dateNote.style.display = 'none';
         }
 
         const html = await res.text();
