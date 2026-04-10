@@ -478,6 +478,10 @@ If the scheduled pipeline throws an unhandled error, `sendAlert()` sends an emai
 - Analytics: open rate, click rate per story (available via Resend dashboard)
 - Potential paid tier with deeper analysis or custom vendor watchlists
 - Anthropic credit balance monitoring (console.anthropic.com API requires browser session auth — not accessible from the Worker)
+- Dynamic OG meta tags for issue pages — social crawlers can't run JS, so shared issue links always unfurl with the generic title and description. Options:
+  - **Worker-rendered HTML (preferred):** when a request to `/fintech/issue?date=YYYY-MM-DD` matches a known crawler user-agent, the Worker fetches the issue from D1 and returns a minimal HTML shell with the correct `og:title`, `og:description`, and `og:image` baked in; real browsers receive the existing static page as normal
+  - **Dynamic OG image endpoint:** add a `/api/og?date=YYYY-MM-DD` Worker route that renders a PNG with the issue subject using Satori or a similar edge-compatible library
+  - **Vercel Edge Function:** intercept the issue route at the edge, detect crawler by user-agent, inject meta tags into the response before it reaches the client
 
 ---
 
