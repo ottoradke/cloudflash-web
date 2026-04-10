@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>The Daily Fintech Briefing</title>
+  <title>The Daily Fintech Briefing — Cloudflash</title>
   <script>
     (function() {
       const date = new URLSearchParams(window.location.search).get('date');
@@ -24,7 +24,6 @@
 
     :root {
       --bg:      #2179c8;
-      --bg-dark: #1560aa;
       --border:  rgba(255,255,255,0.18);
       --text:    #ffffff;
       --muted:   rgba(255,255,255,0.62);
@@ -32,6 +31,7 @@
 
     html, body {
       min-height: 100%;
+      overflow-x: clip;
       background: var(--bg);
       color: var(--text);
       font-family: 'Inter', sans-serif;
