@@ -46,7 +46,7 @@ Below is a collection of fintech news articles gathered this morning. Select and
 12. Banking-as-a-Service (BaaS) and regulatory developments
 13. Vendor risk and third-party oversight
 
-Stories involving these vendors should be bumped ahead of generic stories on the same topic: Q2, Alkami, Apiture, Backbase, FIS, Fiserv, Jack Henry, Temenos, Thought Machine, Mambu, nCino, Blend, Upstart, Marqeta, Galileo, ACI Worldwide, Volante, Alloy, Sardine, Feedzai, Socure, Unit, Treasury Prime, Synctera.
+Stories involving these vendors should be bumped ahead of generic stories on the same topic: Q2, Alkami, Apiture, Backbase, FIS, Fiserv, Jack Henry, Temenos, Thought Machine, Mambu, nCino, Blend, Upstart, Marqeta, Galileo, ACI Worldwide, Volante, Alloy, Sardine, Feedzai, Socure, Unit, Treasury Prime, Synctera, Candescent, Banno, Lumen Digital, Bottomline, Kony, Nymbus.
 
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
