@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS config_sources (
   name TEXT NOT NULL,
   domain TEXT NOT NULL,
   query TEXT NOT NULL,
+  days INTEGER NOT NULL DEFAULT 7,
+  max_results INTEGER NOT NULL DEFAULT 5,
   note TEXT NOT NULL DEFAULT ''
 );
 

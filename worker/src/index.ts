@@ -33,6 +33,8 @@ interface ConfigSource {
   name: string;
   domain: string;
   query: string;
+  days: number;
+  max_results: number;
   note: string;
 }
 
@@ -57,7 +59,7 @@ async function loadConfig(db: D1Database): Promise<Config> {
   const [topics, vendors, sources, tickers, promptRow] = await Promise.all([
     db.prepare("SELECT id, order_pos, name, note FROM config_topics ORDER BY order_pos ASC").all<ConfigTopic>(),
     db.prepare("SELECT id, order_pos, name, note FROM config_vendors ORDER BY order_pos ASC").all<ConfigVendor>(),
-    db.prepare("SELECT id, order_pos, name, domain, query, note FROM config_sources ORDER BY order_pos ASC").all<ConfigSource>(),
+    db.prepare("SELECT id, order_pos, name, domain, query, days, max_results, note FROM config_sources ORDER BY order_pos ASC").all<ConfigSource>(),
     db.prepare("SELECT id, order_pos, symbol, name, ticker_group AS 'group', note FROM config_tickers ORDER BY order_pos ASC").all<ConfigTicker>(),
     db.prepare("SELECT template FROM config_prompt WHERE id = 1").first<{ template: string }>(),
   ]);
@@ -153,9 +155,9 @@ async function fetchNewsFromSource(
       query,
       search_depth: "basic",
       include_domains: [source.domain],
-      max_results: 5,
+      max_results: source.max_results ?? 5,
       include_answer: false,
-      days: 7,
+      days: source.days ?? 7,
     }),
   });
   const tavilyDuration = Date.now() - tavilyStart;
@@ -1228,11 +1230,11 @@ export default {
     if (url.pathname === "/api/config/sources" && request.method === "PUT") {
       const key = url.searchParams.get("key");
       if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await request.json() as Array<{ order_pos: number; name: string; domain: string; query: string; note: string }>;
+      const rows = await request.json() as Array<{ order_pos: number; name: string; domain: string; query: string; days: number; max_results: number; note: string }>;
       await env.DB.prepare("DELETE FROM config_sources").run();
       for (const row of rows) {
-        await env.DB.prepare("INSERT INTO config_sources (order_pos, name, domain, query, note) VALUES (?, ?, ?, ?, ?)")
-          .bind(row.order_pos, row.name, row.domain, row.query, row.note ?? "").run();
+        await env.DB.prepare("INSERT INTO config_sources (order_pos, name, domain, query, days, max_results, note) VALUES (?, ?, ?, ?, ?, ?, ?)")
+          .bind(row.order_pos, row.name, row.domain, row.query, row.days ?? 7, row.max_results ?? 5, row.note ?? "").run();
       }
       return jsonResponse({ status: "ok", count: rows.length });
     }
