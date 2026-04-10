@@ -562,8 +562,9 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const tickerGroups = buildTickerGroupsFromConfig(config.tickers);
   const tickerNames  = buildTickerNamesFromConfig(config.tickers);
   const subject = `The Daily Fintech Briefing · ${date}`;
-  const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames);
-  const text = buildEmailText(stories, tickers, date, tickerGroups, tickerNames);
+  const sourceNames = config.sources.map((s) => s.name);
+  const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames, sourceNames);
+  const text = buildEmailText(stories, tickers, date, tickerGroups, tickerNames, sourceNames);
 
   console.log("Saving issue to D1...");
   await saveIssue(env.DB, dateISO, subject, html);
@@ -1087,7 +1088,7 @@ export default {
       const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB, config.tickers.map((t) => t.symbol));
       const tickerGroups = buildTickerGroupsFromConfig(config.tickers);
       const tickerNames  = buildTickerNamesFromConfig(config.tickers);
-      const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames);
+      const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames, config.sources.map((s) => s.name));
 
       const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
       const previewId = await savePreview(env.DB, dateISO, html);

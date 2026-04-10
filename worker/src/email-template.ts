@@ -77,12 +77,15 @@ function buildTickerTable(
   </table>`;
 }
 
+const DEFAULT_SOURCE_NAMES = ["PYMNTS", "Finextra", "American Banker", "Reuters", "Bloomberg", "Finnhub"];
+
 export function buildEmailText(
   stories: Story[],
   tickers: TickerData[] | null,
   date: string,
   tickerGroups: Record<string, string[]> = TICKER_GROUPS,
-  tickerNames: Record<string, string> = TICKER_NAMES
+  tickerNames: Record<string, string> = TICKER_NAMES,
+  sourceNames: string[] = DEFAULT_SOURCE_NAMES
 ): string {
   const lines: string[] = [
     "THE DAILY FINTECH BRIEFING",
@@ -118,6 +121,7 @@ export function buildEmailText(
   }
 
   lines.push("─".repeat(60));
+  lines.push(`Sources: ${sourceNames.join(" · ")}`);
   lines.push("© 2026 Cloudflash, Inc.");
   lines.push("Privacy Policy: https://cloudflash.com/privacy");
   lines.push("Unsubscribe: https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}");
@@ -130,7 +134,8 @@ export function buildEmailHtml(
   tickers: TickerData[] | null,
   date: string,
   tickerGroups?: Record<string, string[]>,
-  tickerNames?: Record<string, string>
+  tickerNames?: Record<string, string>,
+  sourceNames?: string[]
 ): string {
   const storyHtml = stories
     .map(
@@ -176,7 +181,7 @@ export function buildEmailHtml(
       ${storyHtml}
       <tr><td>${tickerHtml}</td></tr>
       <tr><td style="padding:32px 0 0;border-top:1px solid #eee;font-family:Arial,sans-serif;font-size:12px;color:#bbb;line-height:1.6">
-        <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Finnhub</p>
+        <p style="margin:0 0 4px">Sources: ${(sourceNames ?? DEFAULT_SOURCE_NAMES).join(" · ")}</p>
         <p style="margin:0">&#169; 2026 Cloudflash, Inc. · <a href="https://cloudflash.com/privacy" style="color:#bbb">Privacy Policy</a> · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
       </td></tr>
     </table>
