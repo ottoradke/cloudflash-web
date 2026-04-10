@@ -440,6 +440,12 @@
       margin-bottom: 8px;
     }
 
+    .log-card-desc {
+      font-weight: 400;
+      text-transform: none;
+      opacity: 0.6;
+    }
+
     .log-card-count {
       font-size: 1.8rem;
       font-weight: 600;
@@ -1090,25 +1096,25 @@
         <p class="logs-loading" id="logs-loading">Loading…</p>
         <div class="logs-cards" id="logs-cards" style="display:none">
           <div class="log-card">
-            <div class="log-card-service">Tavily</div>
+            <div class="log-card-service">Tavily <span class="log-card-desc">· news search</span></div>
             <div class="log-card-count" id="count-tavily">—</div>
             <div class="log-card-failures" id="failures-tavily"></div>
             <div class="log-card-limit">1,000 / month</div>
           </div>
           <div class="log-card">
-            <div class="log-card-service">Anthropic</div>
+            <div class="log-card-service">Anthropic <span class="log-card-desc">· story generation</span></div>
             <div class="log-card-count" id="count-anthropic">—</div>
             <div class="log-card-failures" id="failures-anthropic"></div>
             <div class="log-card-limit">Pay-as-you-go · No cap</div>
           </div>
           <div class="log-card">
-            <div class="log-card-service">Finnhub</div>
+            <div class="log-card-service">Finnhub <span class="log-card-desc">· market data</span></div>
             <div class="log-card-count" id="count-finnhub">—</div>
             <div class="log-card-failures" id="failures-finnhub"></div>
             <div class="log-card-limit">No monthly cap · 30 req/sec</div>
           </div>
           <div class="log-card">
-            <div class="log-card-service">Resend</div>
+            <div class="log-card-service">Resend <span class="log-card-desc">· email delivery</span></div>
             <div class="log-card-count" id="count-resend">—</div>
             <div class="log-card-failures" id="failures-resend"></div>
             <div class="log-card-limit">50,000 / month · 5 req/sec</div>
