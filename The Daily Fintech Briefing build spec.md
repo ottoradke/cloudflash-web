@@ -470,6 +470,7 @@ If the scheduled pipeline throws an unhandled error, `sendAlert()` sends an emai
 
 - Add more rotating taglines to the landing page hero (see section 3.6)
 - Add ticker groups: Fraud & Compliance (EFX, NDAQ) and Wealth & Capital Markets (BR, ENV, SEIC, TEMN)
+- Add physical mailing address to HTML and plaintext email footers (CAN-SPAM compliance) — use a PO Box, virtual mailbox, or registered agent address; do not use a personal address
 
 ### 12.2 Later
 
