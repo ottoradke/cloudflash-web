@@ -266,8 +266,63 @@
 
     .logs-loading { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 
+    .ref-section { margin-top: 56px; }
+
+    .ref-section h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .ref-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 12px 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ref-table td {
+      padding: 10px 12px 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+      vertical-align: top;
+    }
+
+    .ref-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+
+    .ref-table code {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .vendor-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px 16px;
+      margin-top: 4px;
+    }
+
+    .vendor-chip {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.85);
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
     @media (max-width: 600px) {
       .logs-cards { grid-template-columns: repeat(2, 1fr); }
+      .vendor-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     footer {
@@ -367,6 +422,84 @@
           </div>
         </div>
       </div>
+
+      <div class="ref-section">
+        <h2>Story topics</h2>
+        <table class="ref-table">
+          <thead>
+            <tr><th>#</th><th>Topic</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>AI in banking and financial services</td></tr>
+            <tr><td>2</td><td>Bank technology and digital banking</td></tr>
+            <tr><td>3</td><td>M&amp;A for banks and credit unions</td></tr>
+            <tr><td>4</td><td>Credit union consolidation</td></tr>
+            <tr><td>5</td><td>Core banking modernization</td></tr>
+            <tr><td>6</td><td>Bank middleware and infrastructure</td></tr>
+            <tr><td>7</td><td>Payments modernization (ISO 20022, FedNow, real-time rails)</td></tr>
+            <tr><td>8</td><td>Fraud technology in fintech</td></tr>
+            <tr><td>9</td><td>Core banking vendors (FIS, Fiserv, Jack Henry, Temenos, nCino, etc.)</td></tr>
+            <tr><td>10</td><td>Banking regulation</td></tr>
+            <tr><td>11</td><td>Embedded finance</td></tr>
+            <tr><td>12</td><td>Banking-as-a-Service (BaaS) and regulatory developments</td></tr>
+            <tr><td>13</td><td>Vendor risk and third-party oversight</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ref-section">
+        <h2>Vendor watchlist</h2>
+        <div class="vendor-grid">
+          <div class="vendor-chip">Q2</div>
+          <div class="vendor-chip">Alkami</div>
+          <div class="vendor-chip">Apiture</div>
+          <div class="vendor-chip">Backbase</div>
+          <div class="vendor-chip">FIS</div>
+          <div class="vendor-chip">Fiserv</div>
+          <div class="vendor-chip">Jack Henry</div>
+          <div class="vendor-chip">Temenos</div>
+          <div class="vendor-chip">Thought Machine</div>
+          <div class="vendor-chip">Mambu</div>
+          <div class="vendor-chip">nCino</div>
+          <div class="vendor-chip">Blend</div>
+          <div class="vendor-chip">Upstart</div>
+          <div class="vendor-chip">Marqeta</div>
+          <div class="vendor-chip">Galileo</div>
+          <div class="vendor-chip">ACI Worldwide</div>
+          <div class="vendor-chip">Volante</div>
+          <div class="vendor-chip">Alloy</div>
+          <div class="vendor-chip">Sardine</div>
+          <div class="vendor-chip">Feedzai</div>
+          <div class="vendor-chip">Socure</div>
+          <div class="vendor-chip">Unit</div>
+          <div class="vendor-chip">Treasury Prime</div>
+          <div class="vendor-chip">Synctera</div>
+          <div class="vendor-chip">Candescent</div>
+          <div class="vendor-chip">Banno</div>
+          <div class="vendor-chip">Lumen Digital</div>
+          <div class="vendor-chip">Bottomline</div>
+          <div class="vendor-chip">Kony</div>
+          <div class="vendor-chip">Nymbus</div>
+        </div>
+      </div>
+
+      <div class="ref-section">
+        <h2>News sources</h2>
+        <table class="ref-table">
+          <thead>
+            <tr><th>Source</th><th>Domain</th><th>Query</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>PYMNTS</td><td>pymnts.com</td><td><code>site:pymnts.com fintech banking</code></td></tr>
+            <tr><td>Finextra</td><td>finextra.com</td><td><code>site:finextra.com fintech banking</code></td></tr>
+            <tr><td>American Banker</td><td>americanbanker.com</td><td><code>site:americanbanker.com fintech banking</code></td></tr>
+            <tr><td>Reuters</td><td>reuters.com</td><td><code>fintech banking</code></td></tr>
+            <tr><td>Bloomberg</td><td>bloomberg.com</td><td><code>fintech banking technology</code></td></tr>
+            <tr><td>Bloomberg Money Stuff</td><td>bloomberg.com</td><td><code>Matt Levine Money Stuff</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
     </main>
   </div>
 
