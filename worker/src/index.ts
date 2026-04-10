@@ -937,6 +937,33 @@ export default {
       return jsonResponse({ count: result?.count ?? 0 });
     }
 
+    if (url.pathname === "/api/subscribers" && request.method === "GET") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const rows = await env.DB
+        .prepare("SELECT id, email, confirmed, confirmed_at, unsubscribed_at, subscribed_at FROM subscribers ORDER BY subscribed_at DESC")
+        .all<{ id: number; email: string; confirmed: number; confirmed_at: string | null; unsubscribed_at: string | null; subscribed_at: string }>();
+      return jsonResponse(rows.results);
+    }
+
+    if (url.pathname === "/api/subscribers/confirm" && request.method === "POST") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const { id } = await request.json() as { id: number };
+      await env.DB
+        .prepare("UPDATE subscribers SET confirmed = 1, confirmed_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .bind(id).run();
+      return jsonResponse({ status: "ok" });
+    }
+
+    if (url.pathname === "/api/subscribers/remove" && request.method === "DELETE") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const { id } = await request.json() as { id: number };
+      await env.DB.prepare("DELETE FROM subscribers WHERE id = ?").bind(id).run();
+      return jsonResponse({ status: "ok" });
+    }
+
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
       const issues = await env.DB
         .prepare("SELECT date FROM issues ORDER BY date DESC")

@@ -699,6 +699,142 @@
     .all-table td:first-child { font-family: monospace; }
     .all-table code { font-family: monospace; font-size: 0.78rem; }
 
+    /* ── Subscribers tab ─────────────────────────────────── */
+    .sub-filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-tabs { display: flex; gap: 6px; }
+
+    .status-tab {
+      font-size: 0.72rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .status-tab:hover { color: var(--text); border-color: rgba(255,255,255,0.35); }
+
+    .status-tab.active {
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+      border-color: transparent;
+    }
+
+    .sub-search {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 220px;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .sub-search::placeholder { color: rgba(255,255,255,0.35); }
+    .sub-search:focus { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.4); }
+
+    .sub-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .sub-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 16px 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sub-table td {
+      padding: 10px 16px 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+      vertical-align: middle;
+    }
+
+    .sub-table td:first-child { color: var(--text); }
+
+    .sub-table tr:last-child td { border-bottom: none; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.active       { background: rgba(100,220,140,0.9); }
+    .status-dot.pending      { background: rgba(255,200,80,0.9); }
+    .status-dot.unsubscribed { background: rgba(255,255,255,0.2); }
+
+    .sub-actions { display: flex; gap: 6px; white-space: nowrap; }
+
+    .btn-sub-confirm {
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.95);
+      color: #1a5fa8;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-sub-confirm:hover { background: #fff; }
+
+    .btn-sub-delete {
+      padding: 4px 10px;
+      background: transparent;
+      color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-sub-delete:hover { background: rgba(255,80,80,0.2); color: #ffaaaa; border-color: transparent; }
+
+    .sub-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 24px 0;
+      text-align: center;
+    }
+
     /* ── Footer ──────────────────────────────────────────── */
     footer {
       display: flex;
@@ -780,6 +916,7 @@
       <button class="tab-btn" data-tab="preview" role="tab">Preview</button>
       <button class="tab-btn" data-tab="pipeline" role="tab">Pipeline</button>
       <button class="tab-btn" data-tab="config" role="tab">Config</button>
+      <button class="tab-btn" data-tab="subscribers" role="tab">Subscribers</button>
       <button class="tab-btn active" data-tab="stats" role="tab">Stats</button>
     </nav>
 
@@ -906,6 +1043,37 @@
         </div>
       </div>
 
+      <!-- ── Subscribers tab ───────────────────────────────── -->
+      <div id="tab-subscribers" class="tab-panel">
+        <div class="tab-lock" id="lock-subscribers">Enter your key to unlock.</div>
+        <div id="content-subscribers" style="display:none">
+          <div class="sub-filter-row">
+            <div class="status-tabs" id="status-tabs">
+              <button class="status-tab active" data-status="all">All <span id="count-all"></span></button>
+              <button class="status-tab" data-status="active">Active <span id="count-active"></span></button>
+              <button class="status-tab" data-status="pending">Pending <span id="count-pending"></span></button>
+              <button class="status-tab" data-status="unsubscribed">Unsubscribed <span id="count-unsubscribed"></span></button>
+            </div>
+            <input type="search" class="sub-search" id="sub-search" placeholder="Search email…" />
+          </div>
+          <p class="logs-loading" id="subs-loading">Loading…</p>
+          <div id="subs-table-wrap" style="display:none">
+            <table class="sub-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Subscribed</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="subs-tbody"></tbody>
+            </table>
+            <p class="sub-empty" id="subs-empty" style="display:none">No subscribers match this filter.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- ── Stats tab ──────────────────────────────────── -->
       <div id="tab-stats" class="tab-panel active">
         <div class="logs-header">
@@ -961,7 +1129,7 @@
     // ── State ────────────────────────────────────────────────────
     let authKey  = '';
     let activeTab = 'stats';
-    const PROTECTED = ['preview', 'pipeline', 'config'];
+    const PROTECTED = ['preview', 'pipeline', 'config', 'subscribers'];
 
     // ── Tabs ─────────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1023,6 +1191,7 @@
       renderAll();
       loadRuns();
       loadSubCount();
+      if (window._loadSubs) window._loadSubs();
       switchTab('preview');
     }
 
@@ -1360,6 +1529,164 @@
         saveBtn.classList.add('dirty');
       }
     }
+
+    // ── Subscribers tab ──────────────────────────────────────────
+    (function () {
+      let allSubs    = [];
+      let activeFilter = 'all';
+      let searchQuery  = '';
+
+      const tbody      = document.getElementById('subs-tbody');
+      const loading    = document.getElementById('subs-loading');
+      const tableWrap  = document.getElementById('subs-table-wrap');
+      const emptyMsg   = document.getElementById('subs-empty');
+      const searchInput = document.getElementById('sub-search');
+
+      function statusOf(s) {
+        if (s.unsubscribed_at) return 'unsubscribed';
+        if (s.confirmed)       return 'active';
+        return 'pending';
+      }
+
+      function fmtDate(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts + (ts.includes('Z') ? '' : 'Z'));
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      function updateCounts() {
+        const counts = { all: allSubs.length, active: 0, pending: 0, unsubscribed: 0 };
+        allSubs.forEach(s => counts[statusOf(s)]++);
+        ['all', 'active', 'pending', 'unsubscribed'].forEach(k => {
+          document.getElementById(`count-${k}`).textContent = `(${counts[k]})`;
+        });
+      }
+
+      function renderTable() {
+        const q = searchQuery.toLowerCase();
+        const filtered = allSubs.filter(s => {
+          if (activeFilter !== 'all' && statusOf(s) !== activeFilter) return false;
+          if (q && !s.email.toLowerCase().includes(q)) return false;
+          return true;
+        });
+
+        tbody.innerHTML = '';
+        emptyMsg.style.display = filtered.length ? 'none' : '';
+
+        filtered.forEach(s => {
+          const status = statusOf(s);
+          const dotClass = status;
+          const label = status === 'active' ? 'Active' : status === 'pending' ? 'Pending' : 'Unsubscribed';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${s.email}</td>
+            <td><span class="status-badge"><span class="status-dot ${dotClass}"></span>${label}</span></td>
+            <td>${fmtDate(s.subscribed_at)}</td>
+            <td class="sub-actions"></td>
+          `;
+
+          const actions = tr.querySelector('.sub-actions');
+
+          if (status === 'pending') {
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn-sub-confirm';
+            confirmBtn.textContent = 'Confirm';
+            confirmBtn.addEventListener('click', () => confirmSub(s.id, confirmBtn));
+            actions.appendChild(confirmBtn);
+          }
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-sub-delete';
+          delBtn.textContent = 'Delete';
+          delBtn.addEventListener('click', () => deleteSub(s.id, delBtn, tr));
+          actions.appendChild(delBtn);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function confirmSub(id, btn) {
+        btn.disabled = true;
+        btn.textContent = 'Confirming…';
+        try {
+          const res = await fetch(`https://api.cloudflash.com/api/subscribers/confirm?key=${encodeURIComponent(authKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
+          if (!res.ok) { btn.textContent = 'Error'; btn.disabled = false; return; }
+          const sub = allSubs.find(s => s.id === id);
+          if (sub) { sub.confirmed = 1; sub.confirmed_at = new Date().toISOString(); }
+          updateCounts();
+          renderTable();
+        } catch {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+        }
+      }
+
+      async function deleteSub(id, btn, tr) {
+        if (!confirm('Delete this subscriber?')) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch(`https://api.cloudflash.com/api/subscribers/remove?key=${encodeURIComponent(authKey)}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
+          if (!res.ok) { btn.disabled = false; return; }
+          allSubs = allSubs.filter(s => s.id !== id);
+          tr.remove();
+          updateCounts();
+          if (!tbody.children.length) emptyMsg.style.display = '';
+        } catch {
+          btn.disabled = false;
+        }
+      }
+
+      document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          activeFilter = tab.dataset.status;
+          renderTable();
+        });
+      });
+
+      searchInput.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        renderTable();
+      });
+
+      async function loadSubs() {
+        loading.style.display = '';
+        tableWrap.style.display = 'none';
+        try {
+          const res = await fetch(`https://api.cloudflash.com/api/subscribers?key=${encodeURIComponent(authKey)}`);
+          if (!res.ok) { loading.textContent = 'Failed to load subscribers.'; return; }
+          allSubs = await res.json();
+          loading.style.display = 'none';
+          tableWrap.style.display = '';
+          updateCounts();
+          renderTable();
+        } catch {
+          loading.textContent = 'Failed to load subscribers.';
+        }
+      }
+
+      // Expose loader so applyUnlocked can call it when tab is first visited
+      window._loadSubs = loadSubs;
+
+      // Reload when tab is switched to (in case changes happened elsewhere)
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab === 'subscribers') {
+          btn.addEventListener('click', () => {
+            if (authKey && (!allSubs.length || loading.style.display === 'none')) loadSubs();
+          });
+        }
+      });
+    })();
 
     // ── All view (read-only) ─────────────────────────────────────
     function renderAllView() {
