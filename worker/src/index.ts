@@ -517,6 +517,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
 
   console.log("Saving issue to D1...");
   await saveIssue(env.DB, dateISO, subject, html);
+  await savePreview(env.DB, dateISO, html);
 
   if (overrideTo) {
     console.log(`Test run — sending only to: ${overrideTo.join(", ")}`);
