@@ -178,7 +178,64 @@
       min-height: 400px;
     }
 
-    .logs-section { margin-top: 56px; }
+    .next-run-card {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-top: 56px;
+      height: 50px;
+      overflow: hidden;
+    }
+
+    .next-run-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 20px;
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .next-run-items {
+      display: flex;
+      flex: 1;
+      height: 100%;
+    }
+
+    .next-run-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 20px;
+      border-right: 1px solid var(--border);
+      flex: 1;
+    }
+
+    .next-run-item:last-child { border-right: none; }
+
+    .next-run-service {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .next-run-count {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .logs-section { margin-top: 24px; }
 
     .logs-header {
       display: flex;
@@ -381,6 +438,28 @@
 
       <div class="preview-wrap" id="preview-wrap">
         <iframe id="preview-frame" title="Email preview" sandbox="allow-same-origin"></iframe>
+      </div>
+
+      <div class="next-run-card">
+        <div class="next-run-label">Next Run</div>
+        <div class="next-run-items">
+          <div class="next-run-item">
+            <span class="next-run-service">Tavily</span>
+            <span class="next-run-count" id="nr-tavily">6</span>
+          </div>
+          <div class="next-run-item">
+            <span class="next-run-service">Anthropic</span>
+            <span class="next-run-count" id="nr-anthropic">1</span>
+          </div>
+          <div class="next-run-item">
+            <span class="next-run-service">Finnhub</span>
+            <span class="next-run-count" id="nr-finnhub">11</span>
+          </div>
+          <div class="next-run-item">
+            <span class="next-run-service">Resend</span>
+            <span class="next-run-count" id="nr-resend">—</span>
+          </div>
+        </div>
       </div>
 
       <div class="logs-section">
@@ -626,6 +705,16 @@
 
     btnMock.addEventListener('click', () => loadPreview('preview'));
     btnLive.addEventListener('click', () => loadPreview('preview/live'));
+
+    // Next Run card — Resend count from live subscriber count
+    fetch('https://api.cloudflash.com/api/subscribers/count')
+      .then(r => r.json())
+      .then(data => {
+        if (data.count != null) {
+          document.getElementById('nr-resend').textContent = data.count;
+        }
+      })
+      .catch(() => {});
   </script>
 
   <script>
