@@ -380,7 +380,8 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
     <p style="margin-top:32px;font-size:12px;color:#bbb">If you didn't request this, ignore this email.</p>
   </body></html>`;
 
-  await fetch("https://api.resend.com/emails", {
+  const confirmStart = Date.now();
+  const confirmRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -394,6 +395,13 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
       html: confirmHtml,
     }),
   });
+  const confirmDuration = Date.now() - confirmStart;
+  if (!confirmRes.ok) {
+    const errText = await confirmRes.text();
+    await logApi(env.DB, "resend", false, { duration_ms: confirmDuration, error_message: `${confirmRes.status} ${errText}` });
+  } else {
+    await logApi(env.DB, "resend", true, { duration_ms: confirmDuration });
+  }
 
   return jsonResponse({ status: "confirmation_sent" });
 }
@@ -649,7 +657,8 @@ async function sendAlert(env: Env, error: unknown): Promise<void> {
   if (!env.ALERT_EMAIL || !env.RESEND_API_KEY) return;
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error && error.stack ? `\n\n${error.stack}` : "";
-  await fetch("https://api.resend.com/emails", {
+  const alertStart = Date.now();
+  const alertRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -662,6 +671,13 @@ async function sendAlert(env: Env, error: unknown): Promise<void> {
       html: `<pre style="font-family:monospace;font-size:13px">${message}${stack}</pre>`,
     }),
   });
+  const alertDuration = Date.now() - alertStart;
+  if (!alertRes.ok) {
+    const errText = await alertRes.text();
+    await logApi(env.DB, "resend", false, { duration_ms: alertDuration, error_message: `${alertRes.status} ${errText}` });
+  } else {
+    await logApi(env.DB, "resend", true, { duration_ms: alertDuration });
+  }
 }
 
 // --- Worker export ---
