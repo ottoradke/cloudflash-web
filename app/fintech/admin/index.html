@@ -341,7 +341,7 @@
       background: rgba(255,255,255,0.06);
       border: 1px solid var(--border);
       border-radius: 6px;
-      margin-bottom: 40px;
+      margin-top: 24px;
       height: 50px;
       overflow: hidden;
     }
@@ -656,6 +656,28 @@
       <a href="/fintech" class="back-link">← fintech</a>
     </header>
 
+    <div class="next-run-card">
+      <div class="next-run-label">Next Run</div>
+      <div class="next-run-items">
+        <div class="next-run-item">
+          <span class="next-run-service">Tavily</span>
+          <span class="next-run-count" id="nr-tavily">—</span>
+        </div>
+        <div class="next-run-item">
+          <span class="next-run-service">Anthropic</span>
+          <span class="next-run-count">1</span>
+        </div>
+        <div class="next-run-item">
+          <span class="next-run-service">Finnhub</span>
+          <span class="next-run-count">11</span>
+        </div>
+        <div class="next-run-item">
+          <span class="next-run-service">Resend</span>
+          <span class="next-run-count" id="nr-resend">—</span>
+        </div>
+      </div>
+    </div>
+
     <nav class="tab-nav" role="tablist">
       <button class="tab-btn" data-tab="preview" role="tab">Preview</button>
       <button class="tab-btn" data-tab="pipeline" role="tab">Pipeline</button>
@@ -757,28 +779,6 @@
 
       <!-- ── Stats tab ──────────────────────────────────── -->
       <div id="tab-stats" class="tab-panel active">
-        <div class="next-run-card">
-          <div class="next-run-label">Next Run</div>
-          <div class="next-run-items">
-            <div class="next-run-item">
-              <span class="next-run-service">Tavily</span>
-              <span class="next-run-count" id="nr-tavily">—</span>
-            </div>
-            <div class="next-run-item">
-              <span class="next-run-service">Anthropic</span>
-              <span class="next-run-count">1</span>
-            </div>
-            <div class="next-run-item">
-              <span class="next-run-service">Finnhub</span>
-              <span class="next-run-count">11</span>
-            </div>
-            <div class="next-run-item">
-              <span class="next-run-service">Resend</span>
-              <span class="next-run-count" id="nr-resend">—</span>
-            </div>
-          </div>
-        </div>
-
         <div class="logs-header">
           <h2>API usage</h2>
           <div class="period-tabs" id="period-tabs">
