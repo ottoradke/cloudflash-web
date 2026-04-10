@@ -112,6 +112,7 @@ export function buildEmailText(
 
   lines.push("─".repeat(60));
   lines.push("© 2026 Cloudflash, Inc.");
+  lines.push("Privacy Policy: https://cloudflash.com/privacy");
   lines.push("Unsubscribe: https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}");
 
   return lines.join("\n");
@@ -167,7 +168,7 @@ export function buildEmailHtml(
       <tr><td>${tickerHtml}</td></tr>
       <tr><td style="padding:32px 0 0;border-top:1px solid #eee;font-family:Arial,sans-serif;font-size:12px;color:#bbb;line-height:1.6">
         <p style="margin:0 0 4px">Sources: PYMNTS · Finextra · American Banker · Reuters · Bloomberg · Finnhub</p>
-        <p style="margin:0">&#169; 2026 Cloudflash, Inc. · Est. 2000 · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
+        <p style="margin:0">&#169; 2026 Cloudflash, Inc. · <a href="https://cloudflash.com/privacy" style="color:#bbb">Privacy Policy</a> · <a href="https://cloudflash.com/unsubscribe?token={{UNSUBSCRIBE_TOKEN}}" style="color:#bbb">Unsubscribe</a></p>
       </td></tr>
     </table>
   </td></tr>
