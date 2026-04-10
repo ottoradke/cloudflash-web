@@ -601,6 +601,104 @@
     .config-save-status.error   { color: #ffaaaa; }
     .config-save-status.success { color: rgba(100,220,140,0.85); }
 
+    /* ── Config sub-tabs ─────────────────────────────────── */
+    .sub-tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .sub-tab-btn {
+      padding: 8px 14px;
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+    }
+
+    .sub-tab-btn:hover { color: var(--text); }
+    .sub-tab-btn.active { color: var(--text); border-bottom-color: rgba(255,255,255,0.6); }
+
+    .sub-panel { display: none; }
+    .sub-panel.active { display: block; }
+
+    /* ── Ticker symbol field ─────────────────────────────── */
+    .field-symbol {
+      flex: 0 0 72px !important;
+      font-family: monospace !important;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+    }
+
+    /* ── All tab ─────────────────────────────────────────── */
+    .all-section { margin-bottom: 40px; }
+    .all-section:last-child { margin-bottom: 0; }
+
+    .all-section h3 {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .all-list { list-style: none; }
+
+    .all-list li {
+      font-size: 0.82rem;
+      padding: 7px 0;
+      color: rgba(255,255,255,0.85);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      gap: 12px;
+    }
+
+    .all-list li:first-child { border-top: 1px solid rgba(255,255,255,0.07); }
+    .all-list li .all-num { color: var(--muted); min-width: 20px; }
+
+    .all-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .all-chip {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      padding: 4px 10px;
+    }
+
+    .all-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .all-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0 16px 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .all-table td {
+      padding: 8px 16px 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+    }
+
+    .all-table td:first-child { font-family: monospace; }
+    .all-table code { font-family: monospace; font-size: 0.78rem; }
+
     /* ── Footer ──────────────────────────────────────────── */
     footer {
       display: flex;
@@ -669,7 +767,7 @@
         </div>
         <div class="next-run-item">
           <span class="next-run-service">Finnhub</span>
-          <span class="next-run-count">11</span>
+          <span class="next-run-count" id="nr-finnhub">—</span>
         </div>
         <div class="next-run-item">
           <span class="next-run-service">Resend</span>
@@ -741,37 +839,68 @@
         <div class="tab-lock" id="lock-config">Enter your key to unlock.</div>
         <div id="content-config" style="display:none">
 
-          <div class="config-section">
-            <div class="config-section-header">
-              <h2>Story topics</h2>
-              <button class="btn-config-save" id="save-topics">Save</button>
+          <nav class="sub-tab-nav" role="tablist">
+            <button class="sub-tab-btn active" data-subtab="topics"  role="tab">Story topics</button>
+            <button class="sub-tab-btn"        data-subtab="vendors" role="tab">Vendor watchlist</button>
+            <button class="sub-tab-btn"        data-subtab="sources" role="tab">News sources</button>
+            <button class="sub-tab-btn"        data-subtab="tickers" role="tab">Tickers</button>
+            <button class="sub-tab-btn"        data-subtab="all"     role="tab">All</button>
+          </nav>
+
+          <div id="subpanel-topics" class="sub-panel active">
+            <div class="config-section">
+              <div class="config-section-header">
+                <h2>Story topics</h2>
+                <button class="btn-config-save" id="save-topics">Save</button>
+              </div>
+              <p class="config-hint">Order determines Claude's story priority — top topics rank first.</p>
+              <div id="rows-topics" class="config-rows"></div>
+              <button class="btn-config-add" id="add-topics">+ Add topic</button>
+              <p class="config-save-status" id="save-status-topics"></p>
             </div>
-            <p class="config-hint">Order determines Claude's story priority — top topics rank first.</p>
-            <div id="rows-topics" class="config-rows"></div>
-            <button class="btn-config-add" id="add-topics">+ Add topic</button>
-            <p class="config-save-status" id="save-status-topics"></p>
           </div>
 
-          <div class="config-section">
-            <div class="config-section-header">
-              <h2>Vendor watchlist</h2>
-              <button class="btn-config-save" id="save-vendors">Save</button>
+          <div id="subpanel-vendors" class="sub-panel">
+            <div class="config-section">
+              <div class="config-section-header">
+                <h2>Vendor watchlist</h2>
+                <button class="btn-config-save" id="save-vendors">Save</button>
+              </div>
+              <p class="config-hint">Custom sort — cosmetic only. Notes are admin-only, not passed to Claude.</p>
+              <div id="rows-vendors" class="config-rows"></div>
+              <button class="btn-config-add" id="add-vendors">+ Add vendor</button>
+              <p class="config-save-status" id="save-status-vendors"></p>
             </div>
-            <p class="config-hint">Custom sort — cosmetic only. Notes are admin-only, not passed to Claude.</p>
-            <div id="rows-vendors" class="config-rows"></div>
-            <button class="btn-config-add" id="add-vendors">+ Add vendor</button>
-            <p class="config-save-status" id="save-status-vendors"></p>
           </div>
 
-          <div class="config-section">
-            <div class="config-section-header">
-              <h2>News sources</h2>
-              <button class="btn-config-save" id="save-sources">Save</button>
+          <div id="subpanel-sources" class="sub-panel">
+            <div class="config-section">
+              <div class="config-section-header">
+                <h2>News sources</h2>
+                <button class="btn-config-save" id="save-sources">Save</button>
+              </div>
+              <p class="config-hint">Tavily fetches from each source daily. Order is cosmetic.</p>
+              <div id="rows-sources" class="config-rows"></div>
+              <button class="btn-config-add" id="add-sources">+ Add source</button>
+              <p class="config-save-status" id="save-status-sources"></p>
             </div>
-            <p class="config-hint">Tavily fetches from each source daily. Order is cosmetic.</p>
-            <div id="rows-sources" class="config-rows"></div>
-            <button class="btn-config-add" id="add-sources">+ Add source</button>
-            <p class="config-save-status" id="save-status-sources"></p>
+          </div>
+
+          <div id="subpanel-tickers" class="sub-panel">
+            <div class="config-section">
+              <div class="config-section-header">
+                <h2>Tickers</h2>
+                <button class="btn-config-save" id="save-tickers">Save</button>
+              </div>
+              <p class="config-hint">Finnhub fetches a daily quote for each symbol. Group organizes them in the email market snapshot.</p>
+              <div id="rows-tickers" class="config-rows"></div>
+              <button class="btn-config-add" id="add-tickers">+ Add ticker</button>
+              <p class="config-save-status" id="save-status-tickers"></p>
+            </div>
+          </div>
+
+          <div id="subpanel-all" class="sub-panel">
+            <div id="all-content"></div>
           </div>
 
         </div>
@@ -874,6 +1003,7 @@
         cfg.topics  = data.topics  || [];
         cfg.vendors = data.vendors || [];
         cfg.sources = data.sources || [];
+        cfg.tickers = data.tickers || [];
 
         applyUnlocked();
       } catch {
@@ -1087,20 +1217,29 @@
     }
 
     // ── Config tab ───────────────────────────────────────────────
-    const cfg   = { topics: [], vendors: [], sources: [] };
-    const dirty = { topics: false, vendors: false, sources: false };
+    const cfg   = { topics: [], vendors: [], sources: [], tickers: [] };
+    const dirty = { topics: false, vendors: false, sources: false, tickers: false };
+
+    // ── Config sub-tabs ──────────────────────────────────────────
+    document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sub = btn.dataset.subtab;
+        document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === sub));
+        document.querySelectorAll('.sub-panel').forEach(p => p.classList.toggle('active', p.id === `subpanel-${sub}`));
+        if (sub === 'all') renderAllView();
+      });
+    });
 
     function renderSection(section) {
       const container = document.getElementById(`rows-${section}`);
       container.innerHTML = '';
       cfg[section].forEach((item, i) => container.appendChild(makeRow(section, item, i, cfg[section].length)));
-      if (section === 'sources') {
-        document.getElementById('nr-tavily').textContent = cfg.sources.length || '—';
-      }
+      if (section === 'sources') document.getElementById('nr-tavily').textContent  = cfg.sources.length  || '—';
+      if (section === 'tickers') document.getElementById('nr-finnhub').textContent = cfg.tickers.length  || '—';
     }
 
     function renderAll() {
-      ['topics', 'vendors', 'sources'].forEach(renderSection);
+      ['topics', 'vendors', 'sources', 'tickers'].forEach(renderSection);
     }
 
     function makeRow(section, item, idx, total) {
@@ -1132,6 +1271,8 @@
 
       const fields = section === 'sources'
         ? [['name', '1.5', 'Source name'], ['domain', '1', 'domain.com'], ['query', '2', 'Search query'], ['note', '1', 'Note (admin only)']]
+        : section === 'tickers'
+        ? [['symbol', null, 'ALKT'], ['name', '2', 'Company name'], ['group', '1.5', 'Group'], ['note', '1', 'Note (admin only)']]
         : [['name', '2', null], ['note', '1', 'Note (admin only)']];
 
       fields.forEach(([field, flex, placeholder]) => {
@@ -1162,15 +1303,17 @@
       document.getElementById(`save-${section}`).classList.add('dirty');
     }
 
-    ['topics', 'vendors', 'sources'].forEach(section => {
+    ['topics', 'vendors', 'sources', 'tickers'].forEach(section => {
       document.getElementById(`add-${section}`).addEventListener('click', () => {
-        const item = { id: null, order_pos: cfg[section].length + 1, name: '', note: '' };
-        if (section === 'sources') { item.domain = ''; item.query = ''; }
+        let item;
+        if (section === 'sources')  item = { id: null, order_pos: cfg[section].length + 1, name: '', note: '', domain: '', query: '' };
+        else if (section === 'tickers') item = { id: null, order_pos: cfg[section].length + 1, symbol: '', name: '', group: '', note: '' };
+        else                        item = { id: null, order_pos: cfg[section].length + 1, name: '', note: '' };
         cfg[section].push(item);
         markDirty(section);
         renderSection(section);
         const rows = document.getElementById(`rows-${section}`).querySelectorAll('.config-row');
-        rows[rows.length - 1]?.querySelector('.field-name')?.focus();
+        rows[rows.length - 1]?.querySelector('.field-name, .field-symbol')?.focus();
       });
 
       document.getElementById(`save-${section}`).addEventListener('click', () => saveSection(section));
@@ -1208,6 +1351,7 @@
           cfg.topics  = data.topics  || [];
           cfg.vendors = data.vendors || [];
           cfg.sources = data.sources || [];
+          cfg.tickers = data.tickers || [];
           renderAll();
         }
       } catch {
@@ -1215,6 +1359,34 @@
         saveStatus.className   = 'config-save-status error';
         saveBtn.classList.add('dirty');
       }
+    }
+
+    // ── All view (read-only) ─────────────────────────────────────
+    function renderAllView() {
+      const el = document.getElementById('all-content');
+      let h = '';
+
+      h += '<div class="all-section"><h3>Story topics</h3><ol class="all-list">';
+      cfg.topics.forEach((t, i) => { h += `<li><span class="all-num">${i + 1}</span>${t.name || '<em>empty</em>'}</li>`; });
+      if (!cfg.topics.length) h += '<li style="color:var(--muted)">None</li>';
+      h += '</ol></div>';
+
+      h += '<div class="all-section"><h3>Vendor watchlist</h3><div class="all-chips">';
+      cfg.vendors.forEach(v => { h += `<span class="all-chip">${v.name || '—'}</span>`; });
+      if (!cfg.vendors.length) h += '<span style="font-size:0.82rem;color:var(--muted)">None</span>';
+      h += '</div></div>';
+
+      h += '<div class="all-section"><h3>News sources</h3><table class="all-table"><thead><tr><th>Source</th><th>Domain</th></tr></thead><tbody>';
+      cfg.sources.forEach(s => { h += `<tr><td>${s.name || '—'}</td><td><code>${s.domain || ''}</code></td></tr>`; });
+      if (!cfg.sources.length) h += '<tr><td colspan="2" style="color:var(--muted)">None</td></tr>';
+      h += '</tbody></table></div>';
+
+      h += '<div class="all-section"><h3>Tickers</h3><table class="all-table"><thead><tr><th>Symbol</th><th>Name</th><th>Group</th></tr></thead><tbody>';
+      cfg.tickers.forEach(t => { h += `<tr><td>${t.symbol || '—'}</td><td style="font-family:inherit">${t.name || ''}</td><td style="font-family:inherit">${t.group || ''}</td></tr>`; });
+      if (!cfg.tickers.length) h += '<tr><td colspan="3" style="color:var(--muted)">None</td></tr>';
+      h += '</tbody></table></div>';
+
+      el.innerHTML = h;
     }
 
     // ── Stats tab ────────────────────────────────────────────────

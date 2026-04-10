@@ -63,3 +63,12 @@ CREATE TABLE IF NOT EXISTS config_sources (
   query TEXT NOT NULL,
   note TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS config_tickers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_pos INTEGER NOT NULL,
+  symbol TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  ticker_group TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT ''
+);

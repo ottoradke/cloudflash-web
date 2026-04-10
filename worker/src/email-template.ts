@@ -40,17 +40,22 @@ function formatChange(change: number, pct: number): string {
   return `<span style="color:${color}" aria-label="${label} ${Math.abs(change).toFixed(2)} (${Math.abs(pct).toFixed(2)}%)">${sign}${change.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span>`;
 }
 
-function buildTickerTable(tickers: TickerData[], date: string): string {
+function buildTickerTable(
+  tickers: TickerData[],
+  date: string,
+  groups: Record<string, string[]> = TICKER_GROUPS,
+  names: Record<string, string> = TICKER_NAMES
+): string {
   const bySymbol = Object.fromEntries(tickers.map((t) => [t.symbol, t]));
 
-  const groupRows = Object.entries(TICKER_GROUPS)
+  const groupRows = Object.entries(groups)
     .map(([group, symbols]) => {
       const rows = symbols
         .map((sym) => {
           const t = bySymbol[sym];
           if (!t) return "";
           return `<tr>
-            <td style="padding:4px 12px 4px 0;font-family:Arial,sans-serif;font-size:13px;color:#333">${TICKER_NAMES[sym]} (${sym})</td>
+            <td style="padding:4px 12px 4px 0;font-family:Arial,sans-serif;font-size:13px;color:#333">${names[sym] ?? sym} (${sym})</td>
             <td style="padding:4px 0;font-family:Arial,sans-serif;font-size:13px;color:#333;text-align:right">$${t.price.toFixed(2)}</td>
             <td style="padding:4px 0 4px 12px;font-family:Arial,sans-serif;font-size:13px;text-align:right">${formatChange(t.change, t.changePercent)}</td>
           </tr>`;
@@ -75,7 +80,9 @@ function buildTickerTable(tickers: TickerData[], date: string): string {
 export function buildEmailText(
   stories: Story[],
   tickers: TickerData[] | null,
-  date: string
+  date: string,
+  tickerGroups: Record<string, string[]> = TICKER_GROUPS,
+  tickerNames: Record<string, string> = TICKER_NAMES
 ): string {
   const lines: string[] = [
     "THE DAILY FINTECH BRIEFING",
@@ -98,13 +105,13 @@ export function buildEmailText(
     lines.push("MARKET SNAPSHOT");
     lines.push(`Prices as of 10:30am ET · ${date} · Data via Finnhub`);
     lines.push("");
-    for (const [group, symbols] of Object.entries(TICKER_GROUPS)) {
+    for (const [group, symbols] of Object.entries(tickerGroups)) {
       lines.push(group.toUpperCase());
       for (const sym of symbols) {
         const t = tickers.find((x) => x.symbol === sym);
         if (!t) continue;
         const sign = t.change >= 0 ? "+" : "";
-        lines.push(`  ${TICKER_NAMES[sym]} (${sym})  $${t.price.toFixed(2)}  ${sign}${t.change.toFixed(2)} (${sign}${t.changePercent.toFixed(2)}%)`);
+        lines.push(`  ${tickerNames[sym] ?? sym} (${sym})  $${t.price.toFixed(2)}  ${sign}${t.change.toFixed(2)} (${sign}${t.changePercent.toFixed(2)}%)`);
       }
       lines.push("");
     }
@@ -121,7 +128,9 @@ export function buildEmailText(
 export function buildEmailHtml(
   stories: Story[],
   tickers: TickerData[] | null,
-  date: string
+  date: string,
+  tickerGroups?: Record<string, string[]>,
+  tickerNames?: Record<string, string>
 ): string {
   const storyHtml = stories
     .map(
@@ -138,7 +147,7 @@ export function buildEmailHtml(
     .join("");
 
   const tickerHtml = tickers
-    ? buildTickerTable(tickers, date)
+    ? buildTickerTable(tickers, date, tickerGroups, tickerNames)
     : `<p style="font-family:Arial,sans-serif;font-size:13px;color:#999;margin-top:32px">Market data unavailable for this issue.</p>`;
 
   return `<!DOCTYPE html>

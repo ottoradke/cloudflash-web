@@ -11,15 +11,6 @@ export interface Env {
   PREVIEW_KEY: string;
 }
 
-const TICKERS = ["ALKT", "VYX", "QTWO", "FIS", "FI", "JKHY", "ACIW", "GDOT", "MQ", "NCNO", "UPST"];
-
-const TICKER_GROUPS: Record<string, string[]> = {
-  "Digital Banking": ["ALKT", "VYX", "QTWO"],
-  "Core Banking": ["FIS", "FI", "JKHY"],
-  "Payments & Rails": ["ACIW", "GDOT", "MQ"],
-  "AI & Lending": ["NCNO", "UPST"],
-};
-
 // --- Config types ---
 
 interface ConfigTopic {
@@ -45,23 +36,49 @@ interface ConfigSource {
   note: string;
 }
 
+interface ConfigTicker {
+  id: number;
+  order_pos: number;
+  symbol: string;
+  name: string;
+  group: string;
+  note: string;
+}
+
 interface Config {
   topics: ConfigTopic[];
   vendors: ConfigVendor[];
   sources: ConfigSource[];
+  tickers: ConfigTicker[];
 }
 
 async function loadConfig(db: D1Database): Promise<Config> {
-  const [topics, vendors, sources] = await Promise.all([
+  const [topics, vendors, sources, tickers] = await Promise.all([
     db.prepare("SELECT id, order_pos, name, note FROM config_topics ORDER BY order_pos ASC").all<ConfigTopic>(),
     db.prepare("SELECT id, order_pos, name, note FROM config_vendors ORDER BY order_pos ASC").all<ConfigVendor>(),
     db.prepare("SELECT id, order_pos, name, domain, query, note FROM config_sources ORDER BY order_pos ASC").all<ConfigSource>(),
+    db.prepare("SELECT id, order_pos, symbol, name, ticker_group AS 'group', note FROM config_tickers ORDER BY order_pos ASC").all<ConfigTicker>(),
   ]);
   return {
     topics: topics.results,
     vendors: vendors.results,
     sources: sources.results,
+    tickers: tickers.results,
   };
+}
+
+function buildTickerGroupsFromConfig(tickers: ConfigTicker[]): Record<string, string[]> {
+  const groups: Record<string, string[]> = {};
+  for (const t of tickers) {
+    const g = t.group || "Other";
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(t.symbol);
+  }
+  return groups;
+}
+
+function buildTickerNamesFromConfig(tickers: ConfigTicker[]): Record<string, string> {
+  return Object.fromEntries(tickers.map((t) => [t.symbol, t.name || t.symbol]));
 }
 
 function buildPrompt(topics: ConfigTopic[], vendors: ConfigVendor[]): string {
@@ -161,11 +178,12 @@ async function fetchAllNews(sources: ConfigSource[], tavilyKey: string, db: D1Da
 
 const FINNHUB_BATCH = 25; // Finnhub limit: 30 calls/sec
 
-async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerData[] | null> {
+async function fetchTickers(finnhubKey: string, db: D1Database, symbols: string[]): Promise<TickerData[] | null> {
+  if (!symbols.length) return null;
   try {
     const allResults: (TickerData | null)[] = [];
-    for (let i = 0; i < TICKERS.length; i += FINNHUB_BATCH) {
-      const batch = TICKERS.slice(i, i + FINNHUB_BATCH);
+    for (let i = 0; i < symbols.length; i += FINNHUB_BATCH) {
+      const batch = symbols.slice(i, i + FINNHUB_BATCH);
       const batchResults = await Promise.all(
         batch.map(async (symbol) => {
           const start = Date.now();
@@ -190,7 +208,7 @@ async function fetchTickers(finnhubKey: string, db: D1Database): Promise<TickerD
         })
       );
       allResults.push(...batchResults);
-      if (i + FINNHUB_BATCH < TICKERS.length) {
+      if (i + FINNHUB_BATCH < symbols.length) {
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
@@ -529,7 +547,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   console.log(`Fetched ${articles.length} articles`);
 
   console.log("Fetching tickers...");
-  const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
+  const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB, config.tickers.map((t) => t.symbol));
   console.log(tickers ? `Fetched ${tickers.length} tickers` : "Ticker fetch failed — omitting");
 
   // Save articles before Claude call so we have them even if generation fails
@@ -541,9 +559,11 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
 
   await updatePipelineRunStories(env.DB, runId, stories);
 
+  const tickerGroups = buildTickerGroupsFromConfig(config.tickers);
+  const tickerNames  = buildTickerNamesFromConfig(config.tickers);
   const subject = `The Daily Fintech Briefing · ${date}`;
-  const html = buildEmailHtml(stories, tickers, date);
-  const text = buildEmailText(stories, tickers, date);
+  const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames);
+  const text = buildEmailText(stories, tickers, date, tickerGroups, tickerNames);
 
   console.log("Saving issue to D1...");
   await saveIssue(env.DB, dateISO, subject, html);
@@ -814,7 +834,8 @@ export default {
     }
 
     if (url.pathname === "/test-tickers") {
-      const result = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
+      const testConfig = await loadConfig(env.DB);
+      const result = await fetchTickers(env.FINNHUB_API_KEY, env.DB, testConfig.tickers.map((t) => t.symbol));
       return new Response(JSON.stringify(result, null, 2), {
         headers: { "Content-Type": "application/json" },
       });
@@ -1036,8 +1057,10 @@ export default {
         weekday: "long", month: "long", day: "numeric", year: "numeric",
       });
 
-      const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB);
-      const html = buildEmailHtml(stories, tickers, date);
+      const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB, config.tickers.map((t) => t.symbol));
+      const tickerGroups = buildTickerGroupsFromConfig(config.tickers);
+      const tickerNames  = buildTickerNamesFromConfig(config.tickers);
+      const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames);
 
       const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
       const previewId = await savePreview(env.DB, dateISO, html);
@@ -1102,6 +1125,18 @@ export default {
       if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
       const config = await loadConfig(env.DB);
       return jsonResponse(config);
+    }
+
+    if (url.pathname === "/api/config/tickers" && request.method === "PUT") {
+      const key = url.searchParams.get("key");
+      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
+      const rows = await request.json() as Array<{ order_pos: number; symbol: string; name: string; group: string; note: string }>;
+      await env.DB.prepare("DELETE FROM config_tickers").run();
+      for (const row of rows) {
+        await env.DB.prepare("INSERT INTO config_tickers (order_pos, symbol, name, ticker_group, note) VALUES (?, ?, ?, ?, ?)")
+          .bind(row.order_pos, row.symbol, row.name ?? "", row.group ?? "", row.note ?? "").run();
+      }
+      return jsonResponse({ status: "ok", count: rows.length });
     }
 
     if (url.pathname === "/api/pipeline/runs" && request.method === "GET") {
