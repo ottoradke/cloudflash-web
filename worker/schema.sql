@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
   email TEXT UNIQUE NOT NULL,
   confirmed INTEGER NOT NULL DEFAULT 0,
   confirmed_at TIMESTAMP,
+  unsubscribed_at TIMESTAMP,
   subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   unsubscribe_token TEXT UNIQUE NOT NULL
 );

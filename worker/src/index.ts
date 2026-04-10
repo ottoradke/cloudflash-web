@@ -440,7 +440,7 @@ async function handleUnsubscribe(url: URL, env: Env): Promise<Response> {
   if (!token) return new Response("Missing token", { status: 400 });
 
   await env.DB
-    .prepare("DELETE FROM subscribers WHERE unsubscribe_token = ?")
+    .prepare("UPDATE subscribers SET confirmed = 0, unsubscribed_at = CURRENT_TIMESTAMP WHERE unsubscribe_token = ?")
     .bind(token)
     .run();
 
@@ -841,10 +841,10 @@ export default {
       // Hard bounce or spam complaint — remove subscriber
       if (type === "email.bounced" || type === "email.complained") {
         await env.DB
-          .prepare("DELETE FROM subscribers WHERE email = ?")
+          .prepare("UPDATE subscribers SET confirmed = 0, unsubscribed_at = CURRENT_TIMESTAMP WHERE email = ?")
           .bind(email.toLowerCase())
           .run();
-        console.log(`Webhook ${type}: removed ${email}`);
+        console.log(`Webhook ${type}: soft-deleted ${email}`);
       }
 
       return new Response("OK", { status: 200 });
@@ -855,6 +855,35 @@ export default {
         .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1")
         .first<{ count: number }>();
       return jsonResponse({ count: result?.count ?? 0 });
+    }
+
+    if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+      const issues = await env.DB
+        .prepare("SELECT date FROM issues ORDER BY date DESC")
+        .all<{ date: string }>();
+
+      const staticUrls = [
+        "https://cloudflash.com/fintech",
+        "https://cloudflash.com/fintech/archive",
+      ];
+
+      const issueUrls = issues.results.map(
+        (i) => `https://cloudflash.com/fintech/issue?date=${i.date}`
+      );
+
+      const urls = [...staticUrls, ...issueUrls]
+        .map((u) => `  <url><loc>${u}</loc></url>`)
+        .join("\n");
+
+      return new Response(
+        `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`,
+        {
+          headers: {
+            "Content-Type": "application/xml",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
     }
 
     if (url.pathname === "/api/issues" && request.method === "GET") {

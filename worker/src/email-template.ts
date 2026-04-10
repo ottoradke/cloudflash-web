@@ -36,7 +36,8 @@ const TICKER_NAMES: Record<string, string> = {
 function formatChange(change: number, pct: number): string {
   const color = change >= 0 ? "#1a6e1a" : "#b91c1c";
   const sign = change >= 0 ? "+" : "";
-  return `<span style="color:${color}">${sign}${change.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span>`;
+  const label = change >= 0 ? "up" : "down";
+  return `<span style="color:${color}" aria-label="${label} ${Math.abs(change).toFixed(2)} (${Math.abs(pct).toFixed(2)}%)">${sign}${change.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span>`;
 }
 
 function buildTickerTable(tickers: TickerData[], date: string): string {
@@ -59,8 +60,13 @@ function buildTickerTable(tickers: TickerData[], date: string): string {
     })
     .join("");
 
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;margin-top:32px">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;margin-top:32px" role="region" aria-label="Market Snapshot">
     <tr><td colspan="3" style="padding:16px 0 8px;font-family:Arial,sans-serif;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.05em">Market Snapshot</td></tr>
+    <tr>
+      <th style="text-align:left;padding:0;font-size:0;color:transparent" scope="col">Company</th>
+      <th style="text-align:right;padding:0;font-size:0;color:transparent" scope="col">Price</th>
+      <th style="text-align:right;padding:0;font-size:0;color:transparent" scope="col">Change</th>
+    </tr>
     ${groupRows}
     <tr><td colspan="3" style="padding:12px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#bbb">Prices as of 10:30am ET · ${date} · Data via Finnhub</td></tr>
   </table>`;
@@ -123,7 +129,7 @@ export function buildEmailHtml(
         <td style="vertical-align:top;text-align:center;width:70px;font-family:Arial,sans-serif;font-size:32px;font-weight:bold;color:#2179c8;line-height:1;padding:0 20px 20px 0">${i + 1}</td>
         <td style="vertical-align:top">
           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:19px;font-weight:bold;color:#1a1a1a;line-height:1.3">${s.headline}</p>
-          <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#333;line-height:1.7">${s.body} <a href="${s.url}" style="font-family:Arial,sans-serif;font-size:12px;color:#999;white-space:nowrap;text-decoration:none">${s.cite} ↗</a></p>
+          <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#333;line-height:1.7">${s.body} <a href="${s.url}" aria-label="Source: ${s.cite}" style="font-family:Arial,sans-serif;font-size:12px;color:#999;white-space:nowrap;text-decoration:none">${s.cite} ↗</a></p>
         </td>
       </tr></table>
     </td></tr>`
@@ -144,7 +150,7 @@ export function buildEmailHtml(
       <tr><td style="padding:0 0 16px">
         <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px"><tr>
           <td style="vertical-align:middle;padding:0 10px 20px 0">
-            <img src="https://cloudflash.com/logo.png" width="52" height="52" alt="Cloudflash" style="display:block">
+            <img src="https://cloudflash.com/logo.png" width="52" height="52" alt="Cloudflash logo" style="display:block">
           </td>
           <td style="vertical-align:middle;padding:0 0 20px 0">
             <h1 style="margin:0;font-family:Arial,sans-serif;font-size:36px;font-weight:bold;color:#111;line-height:1.1">The Daily Fintech Briefing</h1>
