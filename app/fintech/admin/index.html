@@ -1543,8 +1543,8 @@
       const searchInput = document.getElementById('sub-search');
 
       function statusOf(s) {
-        if (s.unsubscribed_at) return 'unsubscribed';
-        if (s.confirmed)       return 'active';
+        if (s.unsubscribed_at && (!s.confirmed_at || s.unsubscribed_at > s.confirmed_at)) return 'unsubscribed';
+        if (s.confirmed) return 'active';
         return 'pending';
       }
 

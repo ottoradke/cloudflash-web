@@ -586,7 +586,7 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   } else {
     console.log("Fetching confirmed subscribers...");
     const subscribers = await env.DB
-      .prepare("SELECT email, unsubscribe_token FROM subscribers WHERE confirmed = 1")
+      .prepare("SELECT email, unsubscribe_token FROM subscribers WHERE confirmed = 1 AND (unsubscribed_at IS NULL OR confirmed_at > unsubscribed_at)")
       .all<{ email: string; unsubscribe_token: string }>();
 
     const subs = subscribers.results;
@@ -932,7 +932,7 @@ export default {
 
     if (url.pathname === "/api/subscribers/count" && request.method === "GET") {
       const result = await env.DB
-        .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1")
+        .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1 AND (unsubscribed_at IS NULL OR confirmed_at > unsubscribed_at)")
         .first<{ count: number }>();
       return jsonResponse({ count: result?.count ?? 0 });
     }
