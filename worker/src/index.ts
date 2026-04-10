@@ -680,6 +680,17 @@ async function sendAlert(env: Env, error: unknown): Promise<void> {
   }
 }
 
+// --- Subscriber purge ---
+
+async function purgeExpiredSubscribers(db: D1Database): Promise<void> {
+  const result = await db
+    .prepare("DELETE FROM subscribers WHERE confirmed = 0 AND unsubscribed_at IS NOT NULL AND unsubscribed_at < datetime('now', '-90 days')")
+    .run();
+  if (result.meta.changes > 0) {
+    console.log(`Purged ${result.meta.changes} expired subscriber record(s)`);
+  }
+}
+
 // --- Worker export ---
 
 export default {
@@ -692,6 +703,7 @@ export default {
       await sendAlert(env, err);
       throw err;
     }
+    await purgeExpiredSubscribers(env.DB);
   },
 
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
