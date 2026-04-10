@@ -106,6 +106,7 @@ async function fetchNewsFromSource(
       include_domains: [source.domain],
       max_results: 5,
       include_answer: false,
+      days: 3,
     }),
   });
   const tavilyDuration = Date.now() - tavilyStart;
