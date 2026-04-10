@@ -3,9 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [triggers]
-# 7:30am PDT (UTC-7): "30 14 * * 1-5" — active April–October
-# 7:30am PST (UTC-8): "30 15 * * 1-5" — switch on Nov 1, 2026 (and each Nov thereafter)
-crons = ["30 14 * * 1-5"]
+# 7:30am PDT (UTC-7): "30 14 * * 2-6" — active April–October
+# 7:30am PST (UTC-8): "30 15 * * 2-6" — switch on Nov 1, 2026 (and each Nov thereafter)
+# Note: Cloudflare cron uses 1=Sunday, so 2-6 = Monday–Friday
+crons = ["30 14 * * 2-6"]
 
 [vars]
 # Secrets are stored via `wrangler secret put` — not here.

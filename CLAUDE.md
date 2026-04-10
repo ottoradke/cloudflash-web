@@ -26,7 +26,7 @@ The **Live Server** VS Code extension (by Ritwick Dey) also works — right-clic
 
 The entire application lives in `index.html` with three embedded sections:
 
-- **`<style>`** — All CSS including keyframe animations (`fadeUp`, `blink`, `pulse`), responsive breakpoints (`@media (max-width: 500px)`), and a blue gradient theme (`#2179c8` → `#1a6bbf`)
+- **`<style>`** — All CSS including keyframe animations (`fadeUp`, `blink`, `pulse`), responsive breakpoints (`@media (max-width: 600px)`), and a blue gradient theme (`#2179c8` → `#1a6bbf`)
 - **`<body>`** — Three top-level sections:
   - `.page` — header with animated SVG logo + cursor, hero text
   - `.mesh-zone` — full-viewport-width canvas animation (40 nodes, 120px connection distance) with `.lower` overlay containing the info row (status/timeline/platforms/contact)
