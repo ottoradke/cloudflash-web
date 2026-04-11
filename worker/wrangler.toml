@@ -12,6 +12,13 @@ crons = ["30 14 * * 2-6"]
 # Secrets are stored via `wrangler secret put` — not here.
 # Listed for reference only: ANTHROPIC_API_KEY, RESEND_API_KEY, TAVILY_API_KEY, VERCEL_DEPLOY_HOOK
 
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "briefing-db"
