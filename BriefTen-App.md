@@ -151,13 +151,15 @@ The Vercel rewrite workaround for `/confirm` and `/unsubscribe` disappears entir
 
 ## Cloudflare Account Separation
 
-Cloudflare does not have a native "projects" concept. Within a single account, all Workers, D1 databases, KV namespaces, and Pages sites are flat named resources with no grouping. Naming conventions (e.g. `brieften-worker`, `brieften-db`) are the only organizational tool available within an account.
+Cloudflare does not have a native "projects" concept. Within a single account, all Workers, D1 databases, KV namespaces, and Pages sites are flat named resources with no grouping. **BriefTen will share the existing Cloudflare account with other projects.**
 
-**Use a separate Cloudflare account for BriefTen.**
+Naming convention is the only organizational tool. Prefix every BriefTen resource consistently:
+- Worker: `brieften-api`
+- D1 database: `brieften-db`
+- KV namespace: `brieften-kv`
+- Pages project: `brieften-web`
 
-BriefTen is a commercial product with its own customers' data, its own billing, and eventually its own team. Mixing it into a personal account creates noise, risk, and no clean way to hand off or isolate it later. Cloudflare accounts are free to create, have their own login and API tokens, and are completely isolated from each other at every level — resources, limits, and billing.
-
-Switching between accounts in Wrangler is done by setting `account_id` in `wrangler.toml` or running `wrangler login` with different credentials. Each account manages its own Worker secrets independently.
+This keeps BriefTen resources visually grouped in the Cloudflare dashboard and makes it unambiguous which resources belong to which project. Worker secrets are scoped per Worker, so there's no risk of BriefTen secrets leaking to other Workers in the same account.
 
 ---
 
