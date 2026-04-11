@@ -231,6 +231,27 @@ async function fetchTickers(finnhubKey: string, db: D1Database, symbols: string[
 
 // --- Claude story generation ---
 
+async function fetchRecentHeadlines(db: D1Database, limit = 5): Promise<string[]> {
+  const rows = await db
+    .prepare("SELECT subject FROM issues ORDER BY id DESC LIMIT ?")
+    .bind(limit)
+    .all<{ subject: string }>();
+  // subject is "The Daily Fintech Briefing · Month DD, YYYY" — extract the actual story headlines
+  // Story headlines are stored per-issue in stories_json on pipeline_runs; use subjects as a
+  // coarse dedup signal and also pull story headlines from recent pipeline_runs
+  const runRows = await db
+    .prepare("SELECT stories_json FROM pipeline_runs WHERE stories_json IS NOT NULL ORDER BY id DESC LIMIT ?")
+    .bind(limit)
+    .all<{ stories_json: string }>();
+  const headlines: string[] = [];
+  for (const row of runRows.results) {
+    try {
+      const stories = JSON.parse(row.stories_json) as Story[];
+      for (const s of stories) headlines.push(s.headline);
+    } catch { /* skip malformed rows */ }
+  }
+  return headlines;
+}
 
 async function generateStories(
   articles: TavilyResult[],
@@ -239,6 +260,7 @@ async function generateStories(
   anthropicKey: string,
   db: D1Database,
   promptTemplate = DEFAULT_PROMPT,
+  recentHeadlines: string[] = [],
   attempt = 1
 ): Promise<Story[]> {
   const articleText = articles
@@ -248,7 +270,12 @@ async function generateStories(
     )
     .join("\n\n---\n\n");
 
-  const prompt = buildPrompt(promptTemplate, topics, vendors).replace("{ARTICLES}", articleText);
+  let prompt = buildPrompt(promptTemplate, topics, vendors).replace("{ARTICLES}", articleText);
+
+  if (recentHeadlines.length > 0) {
+    const headlineList = recentHeadlines.map((h, i) => `${i + 1}. ${h}`).join("\n");
+    prompt += `\n\nThe following headlines have already been covered in recent issues. Do not repeat these stories or any substantially similar stories:\n${headlineList}`;
+  }
 
   const anthropicStart = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -290,7 +317,7 @@ async function generateStories(
   } catch (err) {
     if (attempt < 3) {
       console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
-      return generateStories(articles, topics, vendors, anthropicKey, db, promptTemplate, attempt + 1);
+      return generateStories(articles, topics, vendors, anthropicKey, db, promptTemplate, recentHeadlines, attempt + 1);
     }
     throw err;
   }
@@ -564,7 +591,8 @@ async function runPipeline(env: Env, overrideTo?: string[]): Promise<void> {
   const runId = await savePipelineRun(env.DB, dateISO, articles);
 
   console.log("Generating stories with Claude...");
-  const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt);
+  const recentHeadlines = await fetchRecentHeadlines(env.DB);
+  const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt, recentHeadlines);
   console.log(`Generated ${stories.length} stories`);
 
   await updatePipelineRunStories(env.DB, runId, stories);
@@ -1088,7 +1116,8 @@ export default {
 
       const articles = JSON.parse(run.articles_json) as TavilyResult[];
       const config = await loadConfig(env.DB);
-      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt);
+      const recentHeadlines = await fetchRecentHeadlines(env.DB);
+      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt, recentHeadlines);
 
       const now = new Date();
       const date = now.toLocaleDateString("en-US", {
