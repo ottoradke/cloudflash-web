@@ -6,6 +6,16 @@ A platform that lets anyone set up and run their own AI-generated email newslett
 
 ## Step 1 — Project Setup
 
+**Single repo.** Frontend and backend live together — the same structure as the Fintech Briefing. One repo makes it easy to keep API contracts in sync across both sides, and there's no reason to split until you have separate teams or a build pipeline complex enough to warrant it.
+
+Suggested structure:
+```
+brieften/
+  worker/        — Cloudflare Worker (API, pipeline, all backend logic)
+  app/           — Frontend (Cloudflare Pages)
+  wrangler.toml  — root config
+```
+
 Create the local folder first, then the GitHub repo. Do not create the repo on GitHub first — you'll end up cloning an empty repo and moving files in, which is unnecessary.
 
 ```bash
