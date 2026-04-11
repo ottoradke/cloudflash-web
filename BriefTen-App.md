@@ -37,6 +37,22 @@ The master encryption key is the single point of trust. If compromised, all tena
 
 ---
 
+## Privacy Policies
+
+Two layers are required:
+
+**Platform policy** — covers the relationship between BriefTen and its tenants (account data, billing, infrastructure). One policy, maintained by you, at `app.yourplatform.com/privacy`.
+
+**Per-tenant policy** — covers each tenant's relationship with their subscribers. Tenants are the data controller for their subscriber lists; BriefTen is the data processor. Each tenant must provide a URL to their own privacy policy as part of onboarding. That URL is stored on their account record and linked dynamically in every email footer.
+
+Required account field: `privacy_policy_url TEXT NOT NULL`. The email template's hardcoded `cloudflash.com/privacy` link becomes a dynamic value pulled from tenant config at render time, same pattern as source names.
+
+For GDPR compliance, a Data Processing Agreement (DPA) should be available for tenants who need it. Make it a downloadable PDF linked from the platform's privacy policy.
+
+The Fintech Briefing privacy policy (see below) is a good starting template for tenants to adapt — keep it short, cover only what's actually collected, name the third-party services involved.
+
+---
+
 ## Feature List
 
 ### Auth & Accounts
@@ -446,3 +462,60 @@ All config sections use a DELETE + INSERT pattern on save (replaces entire table
 
 ### Next Run card
 Always visible above the tab bar. Shows: next scheduled run date/time, Tavily source count, Finnhub ticker count, confirmed subscriber count. Populated on unlock.
+
+---
+
+## Privacy Policy — Reference Implementation
+
+The following is the privacy policy written for The Daily Fintech Briefing. It covers what is actually collected (email address, confirmation timestamp, subscription status — nothing else), names the four third-party services involved, and describes the 90-day post-unsubscribe retention period that matches the `purgeExpiredSubscribers` function. Use this as the starting template for the BriefTen platform policy and as a reference for the tenant policy template.
+
+Key design decisions reflected in the policy:
+- **Minimal collection** — only what is needed to send the email. No names, no tracking, no advertising.
+- **Single stated purpose** — the email address is used only to send the newsletter.
+- **Named third parties** — Resend (delivery), Cloudflare (infrastructure/database), Anthropic (content generation — note that subscriber data is explicitly not involved), Vercel (website hosting + anonymous analytics).
+- **90-day retention** matches the code: `DELETE FROM subscribers WHERE confirmed = 0 AND unsubscribed_at < datetime('now', '-90 days')`.
+- **No cookies** — accurate, since the admin page uses `localStorage` (not cookies) for the auth key, and Vercel Analytics is cookieless.
+- **Email obfuscation** — contact email links are base64-encoded and injected at runtime via JavaScript to prevent scraper harvesting. The policy page uses the same pattern as the main site.
+
+---
+
+### Policy text (as of April 10, 2026)
+
+**Privacy Policy**
+*Last updated April 10, 2026*
+
+This policy covers Cloudflash, Inc. and The Daily Fintech Briefing newsletter. We keep it short because we don't do much with your data.
+
+**What we collect**
+- Your email address when you subscribe
+- The date and time you confirmed your subscription
+- Your subscription status (subscribed or unsubscribed)
+
+We don't collect names, payment information, browsing behavior, or anything else.
+
+**How we use it**
+Your email address is used for one purpose: to send you The Daily Fintech Briefing each weekday morning. We don't use it for advertising, we don't sell it, and we don't share it with anyone except the services listed below that are necessary to deliver the email.
+
+**Third-party services**
+- **Resend** — handles email delivery. Your address is passed to Resend to send each issue.
+- **Cloudflare** — hosts our backend infrastructure and database.
+- **Anthropic** — generates newsletter content using the Claude API. Article text is sent to Anthropic to write stories; no subscriber data is involved.
+- **Vercel** — hosts the website. Vercel Analytics collects anonymous page view data with no cookies.
+
+**Unsubscribing**
+Every email includes an unsubscribe link in the footer. Clicking it removes you immediately. You can also email hello@cloudflash.com and we'll remove you manually.
+
+**Data retention**
+When you unsubscribe, your record is marked inactive and retained for 90 days before being purged. This allows us to maintain an accurate picture of subscription history. After 90 days the record is deleted permanently.
+
+**Your rights**
+You can request a copy of the data we hold about you, or ask us to delete it at any time by emailing hello@cloudflash.com. We'll respond within 30 days.
+
+**Cookies**
+We don't use cookies for tracking or advertising.
+
+**Changes**
+If we make material changes to this policy we'll update the date at the top. We won't notify subscribers by email unless the changes are significant.
+
+**Contact**
+hello@cloudflash.com
