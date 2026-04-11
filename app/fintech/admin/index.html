@@ -486,6 +486,32 @@
 
     .config-rows { display: flex; flex-direction: column; }
 
+    .config-row-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 0 5px;
+    }
+
+    .config-row-header-spacer { flex-shrink: 0; }
+
+    .config-row-header-fields {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .config-row-header-fields span {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.35);
+      padding: 0 8px;
+      min-width: 0;
+    }
+
     .config-row {
       display: flex;
       align-items: center;
@@ -1427,9 +1453,42 @@
       });
     });
 
+    const SECTION_HEADERS = {
+      topics:  [['2',   'Name'],    ['1',   'Note']],
+      vendors: [['2',   'Name'],    ['1',   'Note']],
+      sources: [['1.5', 'Source'],  ['1',   'Domain'], ['2', 'Query'], ['0.4', 'Days'], ['0.4', 'Results'], ['1', 'Note']],
+      tickers: [['',    'Symbol'],  ['2',   'Name'],   ['1.5', 'Group'], ['1', 'Note']],
+    };
+
     function renderSection(section) {
       const container = document.getElementById(`rows-${section}`);
       container.innerHTML = '';
+
+      if (cfg[section].length) {
+        const header = document.createElement('div');
+        header.className = 'config-row-header';
+        // spacer for move buttons (20px) + gap (8px)
+        const spacer = document.createElement('div');
+        spacer.className = 'config-row-header-spacer';
+        spacer.style.width = '20px';
+        header.appendChild(spacer);
+        const fieldsDiv = document.createElement('div');
+        fieldsDiv.className = 'config-row-header-fields';
+        SECTION_HEADERS[section].forEach(([flex, label]) => {
+          const span = document.createElement('span');
+          span.textContent = label;
+          if (flex) span.style.flex = flex;
+          fieldsDiv.appendChild(span);
+        });
+        header.appendChild(fieldsDiv);
+        // spacer for delete button (24px)
+        const delSpacer = document.createElement('div');
+        delSpacer.style.width = '24px';
+        delSpacer.style.flexShrink = '0';
+        header.appendChild(delSpacer);
+        container.appendChild(header);
+      }
+
       cfg[section].forEach((item, i) => container.appendChild(makeRow(section, item, i, cfg[section].length)));
       if (section === 'sources') document.getElementById('nr-tavily').textContent  = cfg.sources.length  || '—';
       if (section === 'tickers') document.getElementById('nr-finnhub').textContent = cfg.tickers.length  || '—';
