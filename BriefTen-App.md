@@ -135,6 +135,32 @@ This is essentially what the Fintech Briefing already is, unwrapped from its sin
 
 ---
 
+## Hosting — Drop Vercel
+
+The Fintech Briefing uses Vercel to serve static files and proxy two routes (`/confirm`, `/unsubscribe`) to the Cloudflare worker via `vercel.json` rewrites. This works for a single static site but doesn't scale to BriefTen.
+
+BriefTen needs dynamic per-tenant pages, an auth-gated dashboard, onboarding flows, and billing pages — none of which is a static site. Rather than add a framework on top of Vercel, go fully Cloudflare:
+
+- **Cloudflare Pages** serves the frontend (static or SSR). No commercial use restrictions, generous free tier.
+- **Cloudflare Workers** handles all API and pipeline logic (already the case).
+- Everything on one platform — one billing account, no proxy rewrites, no cross-service dependencies.
+
+The Vercel rewrite workaround for `/confirm` and `/unsubscribe` disappears entirely — those routes are served directly by the Worker since you control full domain routing through Cloudflare.
+
+---
+
+## Cloudflare Account Separation
+
+Cloudflare does not have a native "projects" concept. Within a single account, all Workers, D1 databases, KV namespaces, and Pages sites are flat named resources with no grouping. Naming conventions (e.g. `brieften-worker`, `brieften-db`) are the only organizational tool available within an account.
+
+**Use a separate Cloudflare account for BriefTen.**
+
+BriefTen is a commercial product with its own customers' data, its own billing, and eventually its own team. Mixing it into a personal account creates noise, risk, and no clean way to hand off or isolate it later. Cloudflare accounts are free to create, have their own login and API tokens, and are completely isolated from each other at every level — resources, limits, and billing.
+
+Switching between accounts in Wrangler is done by setting `account_id` in `wrangler.toml` or running `wrangler login` with different credentials. Each account manages its own Worker secrets independently.
+
+---
+
 ---
 
 # Reference Implementation — The Daily Fintech Briefing
