@@ -4,6 +4,26 @@ A platform that lets anyone set up and run their own AI-generated email newslett
 
 ---
 
+## Step 1 — Project Setup
+
+Create the local folder first, then the GitHub repo. Do not create the repo on GitHub first — you'll end up cloning an empty repo and moving files in, which is unnecessary.
+
+```bash
+mkdir brieften
+cd brieften
+git init
+```
+
+Then create the GitHub repo from the CLI:
+
+```bash
+gh repo create brieften --private --source=. --remote=origin --push
+```
+
+This creates the repo, links it as `origin`, and pushes in one command. Requires the `gh` CLI (already installed if you've been using it on the Fintech Briefing project).
+
+---
+
 ## Business Model
 
 Flat monthly subscription — users pay for the platform, not for API consumption. Since they bring their own keys, you're not absorbing Anthropic or Tavily costs. Easy to reason about pricing.
