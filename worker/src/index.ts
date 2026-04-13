@@ -165,6 +165,7 @@ async function fetchNewsFromSource(
     body: JSON.stringify({
       api_key: tavilyKey,
       query,
+      topic: "news",
       search_depth: "basic",
       include_domains: [source.domain],
       max_results: source.max_results ?? 5,
