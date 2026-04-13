@@ -5,6 +5,9 @@ Below is a collection of fintech news articles gathered this morning. Select and
 
 Stories involving these vendors should be bumped ahead of generic stories on the same topic: {VENDORS}.
 
+The following stories have already been covered in recent issues. Do not repeat them or any substantially similar story:
+{RECENT_HEADLINES}
+
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
 - A 3–5 sentence paragraph with the key facts, your honest read on what it means, and — where the story warrants it — a strategic observation about what it signals for the industry. Write with a point of view. Wit is fine but don''t reach for a joke at the expense of insight.

@@ -93,6 +93,9 @@ Below is a collection of fintech news articles gathered this morning. Select and
 
 Stories involving these vendors should be bumped ahead of generic stories on the same topic: {VENDORS}.
 
+The following stories have already been covered in recent issues. Do not repeat them or any substantially similar story:
+{RECENT_HEADLINES}
+
 For each story write:
 - A punchy, witty headline (no clickbait, no "This Is Why" constructions)
 - A 3–5 sentence paragraph with the key facts, your honest read on what it means, and — where the story warrants it — a strategic observation about what it signals for the industry. Write with a point of view. Wit is fine but don't reach for a joke at the expense of insight.
@@ -108,12 +111,21 @@ Here are today's articles:
 
 {ARTICLES}`;
 
-function buildPrompt(template: string, topics: ConfigTopic[], vendors: ConfigVendor[]): string {
+function buildPrompt(
+  template: string,
+  topics: ConfigTopic[],
+  vendors: ConfigVendor[],
+  recentHeadlines: string[] = []
+): string {
   const topicList  = topics.map((t, i) => `${i + 1}. ${t.name}`).join("\n");
   const vendorList = vendors.map((v) => v.name).join(", ");
+  const headlineList = recentHeadlines.length > 0
+    ? recentHeadlines.map((h, i) => `${i + 1}. ${h}`).join("\n")
+    : "(none)";
   return template
     .replace("{TOPICS}",  topicList)
-    .replace("{VENDORS}", vendorList);
+    .replace("{VENDORS}", vendorList)
+    .replace("{RECENT_HEADLINES}", headlineList);
 }
 
 // --- API usage logging ---
@@ -270,12 +282,7 @@ async function generateStories(
     )
     .join("\n\n---\n\n");
 
-  let prompt = buildPrompt(promptTemplate, topics, vendors).replace("{ARTICLES}", articleText);
-
-  if (recentHeadlines.length > 0) {
-    const headlineList = recentHeadlines.map((h, i) => `${i + 1}. ${h}`).join("\n");
-    prompt += `\n\nThe following headlines have already been covered in recent issues. Do not repeat these stories or any substantially similar stories:\n${headlineList}`;
-  }
+  const prompt = buildPrompt(promptTemplate, topics, vendors, recentHeadlines).replace("{ARTICLES}", articleText);
 
   const anthropicStart = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
