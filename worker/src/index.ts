@@ -295,10 +295,7 @@ async function generateStories(
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
-      messages: [
-        { role: "user", content: prompt },
-        { role: "assistant", content: "[" },
-      ],
+      messages: [{ role: "user", content: prompt }],
     }),
   });
   const anthropicDuration = Date.now() - anthropicStart;
@@ -316,8 +313,7 @@ async function generateStories(
   };
   const tokens_used = data.usage ? data.usage.input_tokens + data.usage.output_tokens : undefined;
   await logApi(db, "anthropic", true, { duration_ms: anthropicDuration, tokens_used });
-  // Prepend the "[" we prefilled — Claude's response continues from there
-  const text = "[" + (data.content[0]?.text || "]");
+  const text = data.content[0]?.text || "[]";
 
   const retry = (reason: string, err?: unknown): Promise<Story[]> => {
     console.warn(`Stories JSON parse failed (attempt ${attempt}): ${reason}. Claude returned:\n${text.slice(0, 2000)}`);
