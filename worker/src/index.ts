@@ -295,7 +295,10 @@ async function generateStories(
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "user", content: prompt },
+        { role: "assistant", content: "[" },
+      ],
     }),
   });
   const anthropicDuration = Date.now() - anthropicStart;
@@ -313,20 +316,28 @@ async function generateStories(
   };
   const tokens_used = data.usage ? data.usage.input_tokens + data.usage.output_tokens : undefined;
   await logApi(db, "anthropic", true, { duration_ms: anthropicDuration, tokens_used });
-  const text = data.content[0]?.text || "[]";
+  // Prepend the "[" we prefilled — Claude's response continues from there
+  const text = "[" + (data.content[0]?.text || "]");
+
+  const retry = (reason: string, err?: unknown): Promise<Story[]> => {
+    console.warn(`Stories JSON parse failed (attempt ${attempt}): ${reason}. Claude returned:\n${text.slice(0, 2000)}`);
+    if (err) console.warn(err);
+    if (attempt < 3) {
+      return generateStories(articles, topics, vendors, anthropicKey, db, promptTemplate, recentHeadlines, attempt + 1);
+    }
+    throw new Error(`Could not parse stories JSON from Claude after ${attempt} attempts. Last response: ${text.slice(0, 500)}`);
+  };
 
   // Strip markdown code fences if Claude wraps the response
   const stripped = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
   const jsonMatch = stripped.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error("Could not parse stories JSON from Claude");
+  if (!jsonMatch) {
+    return retry("no JSON array found in response");
+  }
   try {
     return JSON.parse(jsonMatch[0]) as Story[];
   } catch (err) {
-    if (attempt < 3) {
-      console.warn(`Stories JSON parse failed (attempt ${attempt}), retrying...`);
-      return generateStories(articles, topics, vendors, anthropicKey, db, promptTemplate, recentHeadlines, attempt + 1);
-    }
-    throw err;
+    return retry("JSON.parse threw", err);
   }
 }
 
