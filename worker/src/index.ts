@@ -725,11 +725,12 @@ export default {
       return Response.redirect(`https://brieften.com/unsubscribe${url.search}`, 301);
     }
 
-    // Resend webhook still points here until the Resend dashboard is
-    // repointed at BriefTen. 200 no-op — anything else would make Resend
-    // retry the delivery queue.
+    // Resend webhook — 200 no-op. BriefTen now owns bounce/complaint
+    // handling; this endpoint exists only to absorb retries from any
+    // stale deliveries still aimed at this URL. 4xx would trigger the
+    // Resend retry queue, so always return 200.
     if (url.pathname === "/webhooks/resend" && request.method === "POST") {
-      return new Response("OK", { status: 200 });
+      return jsonResponse({ received: true });
     }
 
     // Retired routes — BriefTen handles these now.
