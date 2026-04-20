@@ -204,6 +204,34 @@
     .form-message.success { color: #a8f0c6; }
     .form-message.error { color: #ffaaaa; }
 
+    .moved-banner {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 24px;
+      max-width: 520px;
+      margin-bottom: 12px;
+    }
+
+    .moved-banner p {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .moved-banner p + p {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .moved-banner a {
+      color: #fff;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-weight: 500;
+    }
+
 
     /* What it is */
     .section {
@@ -378,14 +406,10 @@
         <p class="tagline-sub">Ten stories. Eleven tickers. Every weekday at 7:30am PT.</p>
         <p class="tagline">Written by AI, edited by nobody — <span id="tagline-rotate" style="transition:opacity 0.5s ease;"></span></p>
 
-        <form class="signup-form" id="signup-form">
-          <label for="email-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
-          <input type="email" id="email-input" placeholder="you@example.com" required autocomplete="email" />
-          <button type="submit" id="submit-btn">Subscribe →</button>
-        </form>
-        <p class="form-fine">Free · No spam · Unsubscribe anytime</p>
-        <p class="form-fine" style="margin-top:6px">I will never share your email address. Ever.</p>
-        <p class="form-message" id="form-message"></p>
+        <div class="moved-banner">
+          <p>The Daily Fintech Briefing has moved to <a href="https://brieften.com">BriefTen</a>.</p>
+          <p>Existing subscribers — no action needed, issues continue as normal. New here? <a href="https://brieften.com">Subscribe on BriefTen →</a></p>
+        </div>
       </div>
 
       <!-- Subscriber + latest issue cards -->
@@ -501,59 +525,6 @@
 
     showEnding(0);
     setInterval(cycleEnding, 6000);
-
-    // Signup form
-    const form = document.getElementById('signup-form');
-    const emailInput = document.getElementById('email-input');
-    const submitBtn = document.getElementById('submit-btn');
-    const msg = document.getElementById('form-message');
-
-    // Handle ?status= redirects from confirm/unsubscribe
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('status');
-    if (status === 'confirmed') {
-      msg.textContent = "You're subscribed. See you tomorrow morning.";
-      msg.className = 'form-message success';
-    } else if (status === 'already_confirmed') {
-      msg.textContent = "You're already subscribed.";
-      msg.className = 'form-message success';
-    } else if (status === 'unsubscribed') {
-      msg.textContent = "You've been unsubscribed.";
-      msg.className = 'form-message success';
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending…';
-      msg.textContent = '';
-      msg.className = 'form-message';
-
-      try {
-        const res = await fetch('https://api.cloudflash.com/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailInput.value }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          form.style.display = 'none';
-          document.querySelector('.form-fine').style.display = 'none';
-          document.querySelector('.form-fine + .form-fine').style.display = 'none';
-          msg.textContent = 'Check your inbox to confirm your subscription.';
-          msg.className = 'form-message success';
-        } else {
-          msg.textContent = data.error || 'Something went wrong. Please try again.';
-          msg.className = 'form-message error';
-        }
-      } catch {
-        msg.textContent = 'Something went wrong. Please try again.';
-        msg.className = 'form-message error';
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Subscribe →';
-      }
-    });
   </script>
 
   <script>

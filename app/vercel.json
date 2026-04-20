@@ -1,7 +1,9 @@
 {
+  "redirects": [
+    { "source": "/confirm", "destination": "https://brieften.com/confirm", "permanent": true },
+    { "source": "/unsubscribe", "destination": "https://brieften.com/unsubscribe", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/confirm", "destination": "https://api.cloudflash.com/confirm?:query" },
-    { "source": "/unsubscribe", "destination": "https://api.cloudflash.com/unsubscribe?:query" },
     { "source": "/sitemap.xml", "destination": "https://api.cloudflash.com/sitemap.xml" }
   ],
   "headers": [

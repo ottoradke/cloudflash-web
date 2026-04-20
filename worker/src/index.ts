@@ -430,129 +430,6 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-async function handleSubscribe(request: Request, env: Env): Promise<Response> {
-  let email: string;
-  const contentType = request.headers.get("content-type") || "";
-
-  if (contentType.includes("application/json")) {
-    const body = await request.json() as { email?: string };
-    email = (body.email || "").trim().toLowerCase();
-  } else {
-    const form = await request.formData();
-    email = ((form.get("email") as string) || "").trim().toLowerCase();
-  }
-
-  if (!isValidEmail(email)) {
-    return jsonResponse({ error: "Invalid email address" }, 400);
-  }
-
-  const existing = await env.DB
-    .prepare("SELECT confirmed FROM subscribers WHERE email = ?")
-    .bind(email)
-    .first<{ confirmed: number }>();
-
-  if (existing?.confirmed) {
-    return jsonResponse({ error: "Already subscribed" }, 409);
-  }
-
-  const token = generateToken();
-
-  if (existing) {
-    await env.DB
-      .prepare("UPDATE subscribers SET unsubscribe_token = ? WHERE email = ?")
-      .bind(token, email)
-      .run();
-  } else {
-    await env.DB
-      .prepare("INSERT INTO subscribers (email, confirmed, unsubscribe_token) VALUES (?, 0, ?)")
-      .bind(email, token)
-      .run();
-  }
-
-  const confirmUrl = `https://cloudflash.com/confirm?token=${token}`;
-  const confirmHtml = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:500px;margin:60px auto;padding:0 24px">
-    <p style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.08em">The Daily Fintech Briefing</p>
-    <h2 style="font-family:Georgia,serif;color:#111">Confirm your subscription</h2>
-    <p style="color:#555;line-height:1.6">Click below to confirm your email and start receiving the briefing each weekday morning at 7:30am PT.</p>
-    <a href="${confirmUrl}" style="display:inline-block;margin-top:8px;padding:10px 20px;background:#111;color:#fff;text-decoration:none;font-family:Arial,sans-serif;font-size:13px">Confirm subscription →</a>
-    <p style="margin-top:32px;font-size:12px;color:#bbb">If you didn't request this, ignore this email.</p>
-  </body></html>`;
-
-  const confirmStart = Date.now();
-  const confirmRes = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-    },
-    body: JSON.stringify({
-      from: "Fintech Briefing <briefing@cloudflash.com>",
-      reply_to: "hello@cloudflash.com",
-      to: [email],
-      subject: "Confirm your subscription to The Daily Fintech Briefing",
-      html: confirmHtml,
-    }),
-  });
-  const confirmDuration = Date.now() - confirmStart;
-  if (!confirmRes.ok) {
-    const errText = await confirmRes.text();
-    await logApi(env.DB, "resend", false, { duration_ms: confirmDuration, error_message: `${confirmRes.status} ${errText}` });
-  } else {
-    await logApi(env.DB, "resend", true, { duration_ms: confirmDuration });
-  }
-
-  return jsonResponse({ status: "confirmation_sent" });
-}
-
-async function handleConfirm(request: Request, url: URL, env: Env): Promise<Response> {
-  const token = url.searchParams.get("token");
-  if (!token) return new Response("Missing token", { status: 400 });
-
-  // GET: show confirmation page with a button — prevents security scanners from auto-confirming
-  if (request.method === "GET") {
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Confirm — The Daily Fintech Briefing</title></head>
-<body style="margin:0;padding:0;background:#2179c8;font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center">
-  <div style="max-width:420px;padding:48px 32px;text-align:center">
-    <p style="margin:0 0 8px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em">The Daily Fintech Briefing</p>
-    <h1 style="margin:0 0 16px;font-size:26px;font-weight:600;color:#fff;line-height:1.2">Confirm your subscription</h1>
-    <p style="margin:0 0 32px;font-size:15px;color:rgba(255,255,255,0.7);line-height:1.6">Click below to start receiving the briefing each weekday morning at 7:30am PT.</p>
-    <form method="POST" action="/confirm?token=${token}">
-      <button type="submit" style="background:#fff;color:#1a5fa8;border:none;border-radius:4px;padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer">Confirm subscription →</button>
-    </form>
-  </div>
-</body>
-</html>`;
-    return new Response(html, { headers: { "Content-Type": "text/html" } });
-  }
-
-  // POST: actually confirm
-  const result = await env.DB
-    .prepare("UPDATE subscribers SET confirmed = 1, confirmed_at = CURRENT_TIMESTAMP WHERE unsubscribe_token = ? AND confirmed = 0 RETURNING email")
-    .bind(token)
-    .first<{ email: string }>();
-
-  if (!result) {
-    return htmlRedirect("https://cloudflash.com/fintech?status=already_confirmed");
-  }
-
-  return htmlRedirect("https://cloudflash.com/fintech?status=confirmed");
-}
-
-async function handleUnsubscribe(url: URL, env: Env): Promise<Response> {
-  const token = url.searchParams.get("token");
-  if (!token) return new Response("Missing token", { status: 400 });
-
-  await env.DB
-    .prepare("UPDATE subscribers SET confirmed = 0, unsubscribed_at = CURRENT_TIMESTAMP WHERE unsubscribe_token = ?")
-    .bind(token)
-    .run();
-
-  return htmlRedirect("https://cloudflash.com/fintech?status=unsubscribed");
-}
-
 function jsonResponse(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -563,11 +440,15 @@ function jsonResponse(body: object, status = 200): Response {
   });
 }
 
-function htmlRedirect(location: string): Response {
-  return new Response(null, {
-    status: 302,
-    headers: { Location: location },
-  });
+function goneResponse(): Response {
+  return jsonResponse(
+    {
+      error: "Gone",
+      message: "The Daily Fintech Briefing has moved to BriefTen.",
+      url: "https://brieften.com",
+    },
+    410
+  );
 }
 
 // --- Main pipeline ---
@@ -836,186 +717,54 @@ export default {
       });
     }
 
-    if (url.pathname === "/subscribe" && request.method === "POST") {
-      return handleSubscribe(request, env);
+    if (url.pathname === "/confirm") {
+      return Response.redirect(`https://brieften.com/confirm${url.search}`, 301);
     }
 
-    if (url.pathname === "/confirm" && (request.method === "GET" || request.method === "POST")) {
-      return handleConfirm(request, url, env);
+    if (url.pathname === "/unsubscribe") {
+      return Response.redirect(`https://brieften.com/unsubscribe${url.search}`, 301);
     }
 
-    if (url.pathname === "/unsubscribe" && request.method === "GET") {
-      return handleUnsubscribe(url, env);
-    }
-
-    if (url.pathname === "/resend-to" && request.method === "GET") {
-      const email = url.searchParams.get("email");
-      if (!email) return new Response("Missing email", { status: 400 });
-
-      const issue = await env.DB
-        .prepare("SELECT subject, html_body FROM issues ORDER BY id DESC LIMIT 1")
-        .first<{ subject: string; html_body: string }>();
-      if (!issue) return new Response("No issues found", { status: 404 });
-
-      const sub = await env.DB
-        .prepare("SELECT unsubscribe_token FROM subscribers WHERE email = ? AND confirmed = 1")
-        .bind(email)
-        .first<{ unsubscribe_token: string }>();
-      if (!sub) return new Response("Subscriber not found", { status: 404 });
-
-      const html = issue.html_body.replace("{{UNSUBSCRIBE_TOKEN}}", sub.unsubscribe_token);
-
-      try {
-        const resendStart = Date.now();
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.RESEND_API_KEY}` },
-          body: JSON.stringify({ from: "Fintech Briefing <briefing@cloudflash.com>", to: [email], subject: issue.subject, html }),
-        });
-        const resendDuration = Date.now() - resendStart;
-
-        if (!res.ok) {
-          const errText = await res.text();
-          await logApi(env.DB, "resend", false, { duration_ms: resendDuration, error_message: `${res.status} ${errText}` });
-          return new Response(JSON.stringify({ error: `Resend error: ${errText}` }), { status: 500, headers: { "Content-Type": "application/json" } });
-        }
-
-        await logApi(env.DB, "resend", true, { duration_ms: resendDuration });
-        return new Response(JSON.stringify({ status: "sent", to: email }), { headers: { "Content-Type": "application/json" } });
-      } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
-      }
-    }
-
-    if (url.pathname === "/test-tickers") {
-      const testConfig = await loadConfig(env.DB);
-      const result = await fetchTickers(env.FINNHUB_API_KEY, env.DB, testConfig.tickers.map((t) => t.symbol));
-      return new Response(JSON.stringify(result, null, 2), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    if (url.pathname === "/test-run") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-      const email = url.searchParams.get("email");
-      if (!email) return new Response("Missing email", { status: 400 });
-      try {
-        await runPipeline(env, [email]);
-        return new Response(JSON.stringify({ status: "ok", sent_to: email }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify({ status: "error", message: String(err) }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    if (url.pathname === "/run") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-      try {
-        await runPipeline(env);
-        return new Response(JSON.stringify({ status: "ok" }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify({ status: "error", message: String(err) }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
-
-
-    if (url.pathname === "/api/logs" && request.method === "GET") {
-      const periods = [1, 7, 14, 21, 28];
-      const services = ["tavily", "anthropic", "finnhub", "resend"];
-      const result: Record<string, Record<string, { calls: number; failures: number }>> = {};
-
-      for (const service of services) {
-        result[service] = {};
-        for (const days of periods) {
-          const row = await env.DB
-            .prepare(`SELECT COUNT(*) as calls, SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failures FROM api_logs WHERE service = ? AND created_at >= datetime('now', '-${days} days')`)
-            .bind(service)
-            .first<{ calls: number; failures: number }>();
-          result[service][`${days}d`] = { calls: row?.calls ?? 0, failures: row?.failures ?? 0 };
-        }
-      }
-      return jsonResponse(result);
-    }
-
+    // Resend webhook still points here until the Resend dashboard is
+    // repointed at BriefTen. 200 no-op — anything else would make Resend
+    // retry the delivery queue.
     if (url.pathname === "/webhooks/resend" && request.method === "POST") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-
-      let payload: { type: string; data: { to: string[] } };
-      try {
-        payload = await request.json() as { type: string; data: { to: string[] } };
-      } catch {
-        return new Response("Bad request", { status: 400 });
-      }
-
-      const { type, data } = payload;
-      const email = data?.to?.[0];
-
-      if (!email) return new Response("OK", { status: 200 });
-
-      // Hard bounce or spam complaint — remove subscriber
-      if (type === "email.bounced" || type === "email.complained") {
-        await env.DB
-          .prepare("UPDATE subscribers SET confirmed = 0, unsubscribed_at = CURRENT_TIMESTAMP WHERE email = ?")
-          .bind(email.toLowerCase())
-          .run();
-        console.log(`Webhook ${type}: soft-deleted ${email}`);
-      }
-
       return new Response("OK", { status: 200 });
     }
 
+    // Retired routes — BriefTen handles these now.
+    const retiredRoutes = new Set([
+      "/subscribe",
+      "/resend-to",
+      "/test-tickers",
+      "/test-run",
+      "/run",
+      "/api/logs",
+      "/api/subscribers",
+      "/api/subscribers/confirm",
+      "/api/subscribers/remove",
+      "/pipeline/fetch",
+      "/preview",
+      "/preview/live",
+      "/preview/send",
+      "/api/config",
+      "/api/config/tickers",
+      "/api/config/prompt",
+      "/api/pipeline/runs",
+      "/api/config/topics",
+      "/api/config/vendors",
+      "/api/config/sources",
+    ]);
+    if (retiredRoutes.has(url.pathname)) {
+      return goneResponse();
+    }
+
+    // Historical archive — still read by /fintech/archive and /fintech/issue.
     if (url.pathname === "/api/subscribers/count" && request.method === "GET") {
       const result = await env.DB
         .prepare("SELECT COUNT(*) as count FROM subscribers WHERE confirmed = 1 AND (unsubscribed_at IS NULL OR confirmed_at > unsubscribed_at)")
         .first<{ count: number }>();
       return jsonResponse({ count: result?.count ?? 0 });
-    }
-
-    if (url.pathname === "/api/subscribers" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await env.DB
-        .prepare("SELECT id, email, confirmed, confirmed_at, unsubscribed_at, subscribed_at FROM subscribers ORDER BY subscribed_at DESC")
-        .all<{ id: number; email: string; confirmed: number; confirmed_at: string | null; unsubscribed_at: string | null; subscribed_at: string }>();
-      return jsonResponse(rows.results);
-    }
-
-    if (url.pathname === "/api/subscribers/confirm" && request.method === "POST") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const { id } = await request.json() as { id: number };
-      await env.DB
-        .prepare("UPDATE subscribers SET confirmed = 1, confirmed_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .bind(id).run();
-      return jsonResponse({ status: "ok" });
-    }
-
-    if (url.pathname === "/api/subscribers/remove" && request.method === "DELETE") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const { id } = await request.json() as { id: number };
-      await env.DB.prepare("DELETE FROM subscribers WHERE id = ?").bind(id).run();
-      return jsonResponse({ status: "ok" });
     }
 
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
@@ -1065,222 +814,6 @@ export default {
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
       return jsonResponse(issue);
-    }
-
-    if (url.pathname === "/pipeline/fetch" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", {
-          status: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-        });
-      }
-
-      const now = new Date();
-      const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
-
-      const config = await loadConfig(env.DB);
-      const articles = await fetchAllNews(config.sources, env.TAVILY_API_KEY, env.DB);
-      await savePipelineRun(env.DB, dateISO, articles);
-
-      return jsonResponse({ status: "ok", articles: articles.length, date: dateISO });
-    }
-
-    if (url.pathname === "/preview" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", {
-          status: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-        });
-      }
-
-      const now = new Date();
-      const date = now.toLocaleDateString("en-US", {
-        weekday: "long", month: "long", day: "numeric", year: "numeric",
-      });
-
-      const html = buildEmailHtml(MOCK_STORIES, MOCK_TICKERS, date);
-      return new Response(html, {
-        headers: {
-          "Content-Type": "text/html",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
-
-    if (url.pathname === "/preview/live" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", {
-          status: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-        });
-      }
-
-      const run = await env.DB
-        .prepare("SELECT articles_json, date FROM pipeline_runs ORDER BY id DESC LIMIT 1")
-        .first<{ articles_json: string; date: string }>();
-
-      if (!run?.articles_json) {
-        return new Response("No pipeline run found. Run the pipeline at least once first.", {
-          status: 404,
-          headers: { "Access-Control-Allow-Origin": "*" },
-        });
-      }
-
-      const articles = JSON.parse(run.articles_json) as TavilyResult[];
-      const config = await loadConfig(env.DB);
-      const recentHeadlines = await fetchRecentHeadlines(env.DB);
-      const stories = await generateStories(articles, config.topics, config.vendors, env.ANTHROPIC_API_KEY, env.DB, config.prompt, recentHeadlines);
-
-      const now = new Date();
-      const date = now.toLocaleDateString("en-US", {
-        weekday: "long", month: "long", day: "numeric", year: "numeric",
-      });
-
-      const tickers = await fetchTickers(env.FINNHUB_API_KEY, env.DB, config.tickers.map((t) => t.symbol));
-      const tickerGroups = buildTickerGroupsFromConfig(config.tickers);
-      const tickerNames  = buildTickerNamesFromConfig(config.tickers);
-      const html = buildEmailHtml(stories, tickers, date, tickerGroups, tickerNames, config.sources.map((s) => s.name));
-
-      const dateISO = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
-      const previewId = await savePreview(env.DB, dateISO, html);
-
-      return new Response(html, {
-        headers: {
-          "Content-Type": "text/html",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Expose-Headers": "X-Preview-ID, X-Pipeline-Date",
-          "X-Preview-ID": String(previewId),
-          "X-Pipeline-Date": run.date,
-        },
-      });
-    }
-
-    if (url.pathname === "/preview/send" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) {
-        return new Response("Unauthorized", {
-          status: 401,
-          headers: { "Access-Control-Allow-Origin": "*" },
-        });
-      }
-
-      const id = url.searchParams.get("id");
-      const to = url.searchParams.get("to");
-      if (!id || !to) {
-        return jsonResponse({ error: "Missing id or to" }, 400);
-      }
-
-      const preview = await env.DB
-        .prepare("SELECT date, html FROM previews WHERE id = ?")
-        .bind(Number(id))
-        .first<{ date: string; html: string }>();
-
-      if (!preview) {
-        return jsonResponse({ error: "Preview not found" }, 404);
-      }
-
-      const subject = `The Daily Fintech Briefing · Preview · ${preview.date}`;
-      const html = preview.html.replace("{{UNSUBSCRIBE_TOKEN}}", "preview");
-
-      const resendStart = Date.now();
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.RESEND_API_KEY}` },
-        body: JSON.stringify({ from: "Fintech Briefing <briefing@cloudflash.com>", to: [to], subject, html }),
-      });
-      const resendDuration = Date.now() - resendStart;
-
-      if (!res.ok) {
-        const errText = await res.text();
-        await logApi(env.DB, "resend", false, { duration_ms: resendDuration, error_message: `${res.status} ${errText}` });
-        return jsonResponse({ error: `Resend error: ${res.status}` }, 500);
-      }
-
-      await logApi(env.DB, "resend", true, { duration_ms: resendDuration });
-      return jsonResponse({ status: "sent", to });
-    }
-
-    if (url.pathname === "/api/config" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const config = await loadConfig(env.DB);
-      return jsonResponse(config);
-    }
-
-    if (url.pathname === "/api/config/tickers" && request.method === "PUT") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await request.json() as Array<{ order_pos: number; symbol: string; name: string; group: string; note: string }>;
-      await env.DB.prepare("DELETE FROM config_tickers").run();
-      for (const row of rows) {
-        await env.DB.prepare("INSERT INTO config_tickers (order_pos, symbol, name, ticker_group, note) VALUES (?, ?, ?, ?, ?)")
-          .bind(row.order_pos, row.symbol, row.name ?? "", row.group ?? "", row.note ?? "").run();
-      }
-      return jsonResponse({ status: "ok", count: rows.length });
-    }
-
-    if (url.pathname === "/api/config/prompt" && request.method === "PUT") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const { template } = await request.json() as { template: string };
-      await env.DB.prepare("INSERT INTO config_prompt (id, template) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET template = excluded.template")
-        .bind(template).run();
-      return jsonResponse({ status: "ok" });
-    }
-
-    if (url.pathname === "/api/pipeline/runs" && request.method === "GET") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const runs = await env.DB.prepare(
-        "SELECT id, date, articles_json, stories_json, created_at FROM pipeline_runs ORDER BY created_at DESC LIMIT 20"
-      ).all<{ id: number; date: string; articles_json: string | null; stories_json: string | null; created_at: string }>();
-      const results = runs.results.map(run => ({
-        id: run.id,
-        date: run.date,
-        articles: run.articles_json ? (JSON.parse(run.articles_json) as unknown[]).length : 0,
-        stories: run.stories_json ? (JSON.parse(run.stories_json) as unknown[]).length : 0,
-        created_at: run.created_at,
-      }));
-      return jsonResponse(results);
-    }
-
-    if (url.pathname === "/api/config/topics" && request.method === "PUT") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await request.json() as Array<{ order_pos: number; name: string; note: string }>;
-      await env.DB.prepare("DELETE FROM config_topics").run();
-      for (const row of rows) {
-        await env.DB.prepare("INSERT INTO config_topics (order_pos, name, note) VALUES (?, ?, ?)")
-          .bind(row.order_pos, row.name, row.note ?? "").run();
-      }
-      return jsonResponse({ status: "ok", count: rows.length });
-    }
-
-    if (url.pathname === "/api/config/vendors" && request.method === "PUT") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await request.json() as Array<{ order_pos: number; name: string; note: string }>;
-      await env.DB.prepare("DELETE FROM config_vendors").run();
-      for (const row of rows) {
-        await env.DB.prepare("INSERT INTO config_vendors (order_pos, name, note) VALUES (?, ?, ?)")
-          .bind(row.order_pos, row.name, row.note ?? "").run();
-      }
-      return jsonResponse({ status: "ok", count: rows.length });
-    }
-
-    if (url.pathname === "/api/config/sources" && request.method === "PUT") {
-      const key = url.searchParams.get("key");
-      if (!key || key !== env.PREVIEW_KEY) return new Response("Unauthorized", { status: 401 });
-      const rows = await request.json() as Array<{ order_pos: number; name: string; domain: string; query: string; days: number; max_results: number; note: string }>;
-      await env.DB.prepare("DELETE FROM config_sources").run();
-      for (const row of rows) {
-        await env.DB.prepare("INSERT INTO config_sources (order_pos, name, domain, query, days, max_results, note) VALUES (?, ?, ?, ?, ?, ?, ?)")
-          .bind(row.order_pos, row.name, row.domain, row.query, row.days ?? 7, row.max_results ?? 5, row.note ?? "").run();
-      }
-      return jsonResponse({ status: "ok", count: rows.length });
     }
 
     return new Response("Not Found", { status: 404 });
